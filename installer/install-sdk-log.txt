@@ -1,0 +1,15 @@
+=== install .NET 8 SDK via winget ===
+Timestamp: Thu 07/02/2026 18:54:56.93
+
+C:\Users\sunit\AppData\Local\Microsoft\WindowsApps\winget.exe
+--- running winget install (approve the UAC prompt) ---
+Found Microsoft .NET SDK 8.0 [Microsoft.DotNet.SDK.8] Version 8.0.422
+This application is licensed to you by its owner.
+Microsoft is not responsible for, nor does it grant any licenses to, third-party packages.
+Downloading https://builds.dotnet.microsoft.com/dotnet/Sdk/8.0.422/dotnet-sdk-8.0.422-win-x64.exe
+Successfully verified installer hash
+Starting package install...
+Successfully installed
+
+
+=== finished ===

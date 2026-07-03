@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Windows-targeted because it composes the Windows platform provider.
+         When the Linux daemon lands, this becomes multi-targeted. -->
+    <TargetFramework>net8.0-windows</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ServiceMap.Core\ServiceMap.Core.csproj" />
+    <ProjectReference Include="..\ServiceMap.Platform.Abstractions\ServiceMap.Platform.Abstractions.csproj" />
+    <ProjectReference Include="..\ServiceMap.Platform.Windows\ServiceMap.Platform.Windows.csproj" />
+  </ItemGroup>
+
+</Project>

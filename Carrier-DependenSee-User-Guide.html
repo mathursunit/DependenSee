@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Carrier DependenSee — User Guide</title>
+<style>
+  :root{
+    --ink:#1f2937; --ink2:#374151; --muted:#6b7280; --line:#e5e7eb;
+    --bg:#ffffff; --panel:#f3f4f6; --accent:#2563eb; --green:#059669; --red:#b42318;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;
+       color:var(--ink2);background:var(--bg);line-height:1.6}
+  header.top{background:var(--ink);color:#fff;padding:20px 28px;display:flex;align-items:center;gap:18px}
+  header.top img{height:56px;width:auto;background:#fff;border-radius:8px;padding:4px}
+  header.top h1{margin:0;font-size:22px;letter-spacing:.2px}
+  header.top p{margin:3px 0 0;color:#9ca3af;font-size:14px}
+  .wrap{display:flex;max-width:1120px;margin:0 auto;gap:32px;padding:0 24px}
+  nav.toc{width:240px;flex:none;position:sticky;top:0;align-self:flex-start;
+          height:100vh;overflow:auto;padding:24px 8px 24px 0;border-right:1px solid var(--line)}
+  nav.toc h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:16px 0 6px}
+  nav.toc a{display:block;color:var(--ink2);text-decoration:none;font-size:14px;padding:4px 8px;border-radius:6px}
+  nav.toc a:hover{background:var(--panel);color:var(--accent)}
+  main{flex:1;min-width:0;padding:28px 0 80px}
+  h2.sec{font-size:22px;color:var(--ink);border-bottom:2px solid var(--line);padding-bottom:6px;margin-top:44px}
+  h3{font-size:17px;color:var(--ink);margin-top:26px}
+  p{margin:12px 0}
+  code{background:var(--panel);padding:2px 6px;border-radius:4px;font-family:Consolas,"Courier New",monospace;font-size:13px;color:#0f172a}
+  .callout{border-left:4px solid var(--accent);background:#eff6ff;padding:12px 16px;border-radius:0 8px 8px 0;margin:16px 0}
+  .callout.warn{border-color:#d97706;background:#fffbeb}
+  .callout.tip{border-color:var(--green);background:#ecfdf5}
+  .callout b{color:var(--ink)}
+  table{border-collapse:collapse;width:100%;margin:16px 0;font-size:14px}
+  th,td{border:1px solid var(--line);padding:8px 12px;text-align:left;vertical-align:top}
+  th{background:var(--panel);color:var(--ink);font-weight:600}
+  .pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:600}
+  .pill.in{background:#ecfdf5;color:var(--green)}
+  .pill.out{background:#eff6ff;color:var(--accent)}
+  .pill.listen{background:#f3f4f6;color:var(--ink2)}
+  .pill.net{background:#fef2f2;color:var(--red)}
+  .pill.priv{background:#f3f4f6;color:var(--ink2)}
+  .steps{counter-reset:s;list-style:none;padding-left:0}
+  .steps li{position:relative;padding:6px 0 6px 40px;margin:6px 0}
+  .steps li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:6px;
+      width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;
+      font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  footer{max-width:1120px;margin:0 auto;padding:24px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+  .kbd{font-family:Consolas,monospace;background:#fff;border:1px solid #cbd5e1;border-bottom-width:2px;border-radius:5px;padding:1px 6px;font-size:12px}
+  @media print{nav.toc{display:none}.wrap{display:block}header.top{background:#1f2937 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+  @media(max-width:820px){nav.toc{display:none}.wrap{display:block}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <img src="assets/DependenSee.png" alt="Carrier DependenSee logo"
+       onerror="this.style.display='none'">
+  <div>
+    <h1>Carrier DependenSee — User Guide</h1>
+    <p>See what connects. · Service &amp; connection mapping for cloud migration · Version 1.3.0</p>
+  </div>
+</header>
+
+<div class="wrap">
+<nav class="toc">
+  <h2>Getting started</h2>
+  <a href="#what">What it does</a>
+  <a href="#install">Installing</a>
+  <a href="#first-run">First run</a>
+  <h2>Using the app</h2>
+  <a href="#dashboard">Dashboard tab</a>
+  <a href="#history">History tab</a>
+  <a href="#filters">Filters explained</a>
+  <a href="#colfilters">Column filters (Excel-style)</a>
+  <a href="#unique">Unique flows</a>
+  <a href="#firewall">Firewall PDF report</a>
+  <a href="#annotations">Annotations</a>
+  <a href="#map">Dependency map</a>
+  <a href="#settings">Settings tab</a>
+  <h2>Reference</h2>
+  <a href="#reading">Reading the data</a>
+  <a href="#recipes">Common tasks</a>
+  <a href="#storage">Where data is stored</a>
+  <a href="#service">Managing the service</a>
+  <a href="#trouble">Troubleshooting</a>
+  <a href="#uninstall">Uninstalling</a>
+  <a href="#faq">FAQ</a>
+</nav>
+
+<main>
+
+<h2 class="sec" id="what">What Carrier DependenSee does</h2>
+<p>Carrier DependenSee maps a Windows machine so you can plan its move to the cloud with confidence. It answers three questions:</p>
+<ul>
+  <li><b>What services are installed and running?</b> Every registered Windows service, with state, start mode, and owning process.</li>
+  <li><b>What is this machine listening for?</b> Every program with an open network port.</li>
+  <li><b>Who does it talk to over time?</b> Every inbound and outbound connection, sampled continuously and attributed to the program responsible — the raw material for the firewall rules you'll need on the other side.</li>
+</ul>
+<table>
+  <tr><th>Part</th><th>What it is</th><th>Runs</th></tr>
+  <tr><td><b>Collector</b></td><td>A background Windows Service that records data 24/7, even when logged off.</td><td>Automatically</td></tr>
+  <tr><td><b>DependenSee viewer</b></td><td>The window you open to see the live picture, search history, and export reports.</td><td>When you launch it</td></tr>
+</table>
+
+<h2 class="sec" id="install">Installing</h2>
+<ol class="steps">
+  <li>Double-click <code>Carrier-DependenSee-1.3.0.0-x64.msi</code>.</li>
+  <li>Approve the User Account Control prompt (<b>Yes</b>). Admin rights let the collector see which program owns each connection.</li>
+  <li>Complete the wizard and click <b>Install</b>. It installs to <code>C:\Program Files\Carrier DependenSee</code>.</li>
+  <li>The collector service starts on its own and begins recording immediately.</li>
+</ol>
+<div class="callout tip"><b>Nothing else to install.</b> The .NET runtime is bundled inside the app.</div>
+
+<h2 class="sec" id="first-run">First run</h2>
+<p>Open <b>Carrier DependenSee</b> from the Start Menu. The window has three tabs: <b>Dashboard</b>, <b>History</b>, and <b>Settings</b>. Give the collector a few seconds to complete its first sweep — the Dashboard fills in automatically.</p>
+
+<h2 class="sec" id="dashboard">Dashboard tab</h2>
+<p>Your live, at-a-glance view, refreshing every few seconds. The summary bar shows counts of <b>Services</b>, <b>Listeners</b>, <b>Inbound</b>, and <b>Outbound</b>, followed by three tables: registered services, listening endpoints, and active connections (each connection tagged <span class="pill in">Inbound</span> or <span class="pill out">Outbound</span> and by scope). Every connection now shows the owning <b>Service</b> (resolved from the process’s PID) alongside the raw process name. Click any column header to sort. Tick <b>Hide standard Windows services</b> to drop built-in OS services and see only third-party / application services — the ones that actually matter for a migration.</p>
+
+<h2 class="sec" id="history">History tab</h2>
+<p>The Dashboard shows <i>now</i>; History searches <i>the past</i>. Filters apply automatically as you change them (no button needed). Use <b>Export CSV</b> / <b>Export JSON</b> for the raw data, or <b>Export firewall PDF</b> for a migration-ready report (see below). CSV/JSON exports now include a <b>source</b> (machine) column and the resolved <b>service_name</b>, so data from several machines can be combined and traced back. All exports prompt you for a save location.</p>
+
+<h2 class="sec" id="filters">Filters explained</h2>
+<table>
+  <tr><th>Filter</th><th>What it does</th></tr>
+  <tr><td><b>Process / Remote contains</b></td><td>Substring match on the service/program name or the remote address.</td></tr>
+  <tr><td><b>Process / Remote excludes</b></td><td>The inverse — hide rows whose service/program name or remote address contains the text. Great for stripping out known-noise processes.</td></tr>
+  <tr><td><b>Local port</b></td><td>Focus on one service port, e.g. <code>443</code>.</td></tr>
+  <tr><td><b>Protocol</b></td><td>TCP, UDP, or Any.</td></tr>
+  <tr><td><b>Direction</b></td><td>Inbound, Outbound, Listen, or Any.</td></tr>
+  <tr><td><b>Family</b></td><td><b>IPv4 / IPv6 / Any.</b> Both are always collected; this simply filters the view. Migrations usually care about IPv4, which is the default.</td></tr>
+  <tr><td><b>Scope</b></td><td><b>Private / Internet / Loopback / Link-local / Any.</b> "Internet" = a routable public address; "Private" = RFC1918, CGNAT, etc. This is the fastest way to isolate what talks to the outside world.</td></tr>
+  <tr><td><b>Hours back</b></td><td>How far into the past to search.</td></tr>
+  <tr><td><b>Row limit</b></td><td>Cap the rows returned (newest first).</td></tr>
+  <tr><td><b>Hide ephemeral ports</b></td><td>Drop rows on high (≥49152) OS-assigned client ports, leaving the meaningful service ports.</td></tr>
+  <tr><td><b>Hide same-subnet</b></td><td>Hide traffic that stays within the machine’s own /24 — focus on cross-subnet and external dependencies that need firewall rules.</td></tr>
+</table>
+<p>The <b>Service</b> column shows the actual owning Windows service name instead of a bare executable (e.g. <code>W3SVC</code> rather than <code>svchost</code>), captured at collection time and carried through every grid, export, and the firewall PDF.</p>
+
+<h2 class="sec" id="colfilters">Column filters (Excel-style)</h2>
+<p>Every key column in the History grids — Proto, Direction, Scope, Local/Remote address, ports, Service, and Process — has a small <b>▼ funnel</b> in its header. Click it to open a checklist of the distinct values actually present in the current results, with a search box and <b>Select all</b> / <b>Clear</b> buttons. Untick the values you don’t want and the grid filters instantly — no re-query. An active funnel turns <span style="color:#1e90ff">blue</span>. Column filters stack with each other and with the filter bar above, and your selections are preserved when you re-run the query.</p>
+<div class="callout tip"><b>Example:</b> click the <b>Service</b> funnel, clear everything, tick just <code>W3SVC</code> and <code>MSSQLSERVER</code>, and the grid shows only those two services’ traffic.</div>
+
+<h2 class="sec" id="unique">Unique flows</h2>
+<p>The collector samples every few seconds, so one connection appears hundreds of times. Tick <b>Unique flows only</b> to collapse those into distinct dependencies. The grid switches to show <b>First seen</b>, <b>Last seen</b>, and <b>Count</b> per flow — so "web server → database on 1433" appears once, with how long and how often it was seen.</p>
+<div class="callout tip"><b>Why it's smart about ports:</b> ephemeral client ports are ignored when collapsing, so a busy outbound destination doesn't explode into thousands of "unique" rows. Outbound flows are keyed on the destination; inbound on the service port + source.</div>
+
+<h2 class="sec" id="firewall">Firewall PDF report</h2>
+<p>This is the deliverable for your network/security team. Click <b>Export firewall PDF</b> to produce a printable report that turns observed traffic into the firewall rules the machine will need after it moves to AWS, Azure, or GCP.</p>
+<h3>What's in it</h3>
+<ul>
+  <li><b>Machine identity &amp; window</b> — hostname, its IP addresses, the observation period, and the filters used.</li>
+  <li><b>Summary</b> — counts of inbound rules, outbound rules, and <span class="pill net">internet-facing</span> flows (the ones security scrutinizes most).</li>
+  <li><b>Inbound rules</b> — for each service port: the protocol, port, owning program, and the allowed <b>sources</b> (each tagged <span class="pill priv">Private</span> or <span class="pill net">Internet</span>). Open ports with no observed traffic are flagged.</li>
+  <li><b>Outbound rules</b> — each destination the machine reached: protocol, IP, port, owning service/program, scope, and (optionally) a resolved hostname.</li>
+  <li><b>Notes &amp; caveats</b> — reminders about observation windows and IP-based egress.</li>
+</ul>
+<h3>Options</h3>
+<table>
+  <tr><th>Option</th><th>Effect</th></tr>
+  <tr><td><b>Resolve names</b></td><td>Best-effort reverse-DNS so destinations show a hostname alongside the IP. On by default; adds a short lookup step.</td></tr>
+  <tr><td><b>Summarize /24</b></td><td>Collapse many inbound sources in the same /24 into one subnet entry for cleaner rules. Off by default (listing exact sources is safer).</td></tr>
+</table>
+<div class="callout"><b>Tip for accuracy:</b> the report reflects only traffic observed in the window. Let the collector run across a representative period (including nightly jobs and month-end peaks) before you finalize rules. The current filters (time window, family, scope) are applied to the report.</div>
+
+<h2 class="sec" id="annotations">Annotations</h2>
+<p>Tag any <b>process</b>, <b>port</b>, or <b>host</b> with a friendly name, an owner, a criticality, and notes. On the <b>Annotations</b> tab pick the kind, enter the key (e.g. process <code>sqlservr</code>, port <code>1433</code>, or a host IP), fill in the details, and click <b>Save / Update</b>. These labels automatically enrich the firewall PDF so reports read in business terms — "1433 (SQL Server) — Finance DB · owner: J. Lee · high criticality" instead of a bare port number. Ports also show their well-known service name (443 → HTTPS, 3389 → RDP, …) automatically.</p>
+
+<h2 class="sec" id="map">Dependency map</h2>
+<p>The <b>Map</b> tab draws the dependencies as a node graph — the machine sits at the center with its peers around it — node color shows scope (gray = private, red = internet), edge color shows direction (blue = outbound, green = inbound), and peer size reflects traffic volume. Adjust the time window and max peers, then click <b>Refresh map</b>.</p>
+
+<h2 class="sec" id="settings">Settings tab</h2>
+<p>Shows the collector service status with <b>Install / Start / Stop / Uninstall</b> buttons (each prompts for elevation). Below that you can set the <b>Database path</b>, <b>Export directory</b>, and <b>Dashboard refresh</b> interval — click <b>Apply settings</b> after changes. Normally the MSI has already installed and started the service, so you won't need these buttons.</p>
+
+<h2 class="sec" id="reading">Reading the data</h2>
+<table>
+  <tr><th>Tag</th><th>Meaning</th></tr>
+  <tr><td><span class="pill listen">Listen</span></td><td>A program holding a port open, waiting for connections.</td></tr>
+  <tr><td><span class="pill in">Inbound</span></td><td>Something outside connected in to a port this machine serves.</td></tr>
+  <tr><td><span class="pill out">Outbound</span></td><td>A program here reached out to a remote address.</td></tr>
+  <tr><td><span class="pill priv">Private</span></td><td>Internal address (RFC1918, CGNAT, loopback, link-local).</td></tr>
+  <tr><td><span class="pill net">Internet</span></td><td>A routable public address.</td></tr>
+</table>
+<div class="callout warn"><b>"unknown" processes:</b> a few protected system connections may not reveal their program. This is normal on Windows.</div>
+
+<h2 class="sec" id="recipes">Common tasks</h2>
+<h3>List everything talking to the public internet</h3>
+<p>History → <b>Scope = Internet</b>, <b>Unique flows only</b>, <b>Run query</b>. Then <b>Export firewall PDF</b> for the write-up.</p>
+<h3>Produce the migration firewall rules for this machine</h3>
+<p>History → set <b>Hours back</b> to cover a representative period, leave <b>Family = IPv4</b>, click <b>Export firewall PDF</b>.</p>
+<h3>Find who connects to a service port</h3>
+<p>History → <b>Local port</b> = e.g. <code>1433</code>, <b>Direction = Inbound</b>, <b>Unique flows only</b>, <b>Run query</b>.</p>
+
+<h2 class="sec" id="storage">Where data is stored</h2>
+<table>
+  <tr><td>History database</td><td><code>C:\ProgramData\CarrierDependenSee\servicemap.db</code></td></tr>
+  <tr><td>Exports (CSV / JSON / PDF)</td><td><code>C:\ProgramData\CarrierDependenSee\exports</code></td></tr>
+  <tr><td>Program files</td><td><code>C:\Program Files\Carrier DependenSee</code></td></tr>
+</table>
+<p>History is kept for 30 days by default; older records are trimmed automatically.</p>
+
+<h2 class="sec" id="service">Managing the collector service</h2>
+<p>It's a normal Windows Service named <b>Carrier DependenSee Collector</b>. Control it from the Settings tab, or with <span class="kbd">Win</span>+<span class="kbd">R</span> → <code>services.msc</code>. Stopping it pauses recording; it restarts automatically with Windows.</p>
+
+<h2 class="sec" id="trouble">Troubleshooting</h2>
+<table>
+  <tr><th>Symptom</th><th>What to do</th></tr>
+  <tr><td>Dashboard stays empty</td><td>Settings → check the service is <b>Running</b>; click <b>Start</b> and wait a few seconds.</td></tr>
+  <tr><td>Firewall PDF looks sparse</td><td>Increase <b>Hours back</b> and let the collector run longer — it only reports observed traffic.</td></tr>
+  <tr><td>Destinations show no hostname</td><td>Reverse-DNS is best-effort; some IPs have no PTR record. The IP is always shown.</td></tr>
+  <tr><td>"unknown" process</td><td>Normal for a handful of protected system sockets.</td></tr>
+</table>
+
+<h2 class="sec" id="uninstall">Uninstalling</h2>
+<ol class="steps">
+  <li><b>Settings → Apps → Installed apps</b> (or Control Panel → Programs and Features).</li>
+  <li>Find <b>Carrier DependenSee</b> and choose <b>Uninstall</b>.</li>
+  <li>The collector service is stopped and removed automatically.</li>
+</ol>
+<div class="callout">Recorded data under <code>C:\ProgramData\CarrierDependenSee</code> is left in place; delete that folder to remove the history too.</div>
+
+<h2 class="sec" id="faq">FAQ</h2>
+<h3>Does it send my data anywhere?</h3>
+<p>No. Everything stays on the machine in a local database. The only network activity is optional reverse-DNS lookups when you generate a firewall PDF with "Resolve names" enabled.</p>
+<h3>Does it slow the machine down?</h3>
+<p>No — a lightweight snapshot every few seconds, written locally.</p>
+<h3>Can it run on a server with no one logged in?</h3>
+<p>Yes. The collector runs as a system service and records continuously.</p>
+<h3>What about IPv6?</h3>
+<p>IPv6 is always collected. The Family filter lets you focus on IPv4 (the usual migration case) or IPv6 as needed.</p>
+<h3>Linux?</h3>
+<p>A Linux version is on the roadmap. This release is for Windows.</p>
+
+</main>
+</div>
+
+<footer>Carrier DependenSee — See what connects. Print or save as PDF from your browser (Ctrl+P → Save as PDF).</footer>
+
+</body>
+</html>

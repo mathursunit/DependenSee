@@ -1,0 +1,420 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:ServiceMap.App.ViewModels"
+        xmlns:ctrl="clr-namespace:ServiceMap.App.Controls"
+        x:Class="ServiceMap.App.Views.MainWindow"
+        Width="1180" Height="740"
+        MinWidth="880" MinHeight="540"
+        Title="{Binding Title}">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel />
+    </Design.DataContext>
+
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_Help">
+                <MenuItem Header="_About Carrier DependenSee" Click="OnAboutClick" />
+            </MenuItem>
+        </Menu>
+        <Border DockPanel.Dock="Top" Background="#1F2937" Padding="16,10">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <TextBlock Text="Carrier DependenSee" FontSize="18" FontWeight="Bold"
+                           Foreground="White" VerticalAlignment="Center" />
+                <TextBlock Text="See what connects." FontSize="13"
+                           Foreground="#9CA3AF" VerticalAlignment="Center" />
+            </StackPanel>
+        </Border>
+
+        <TabControl Margin="8">
+
+            <!-- DASHBOARD -->
+            <TabItem Header="Dashboard">
+                <DockPanel>
+                    <Border DockPanel.Dock="Top" Background="#F3F4F6"
+                            Padding="12,8" Margin="0,0,0,8" CornerRadius="4">
+                        <StackPanel Orientation="Horizontal" Spacing="24">
+                            <StackPanel>
+                                <TextBlock Text="Services" FontSize="11" Foreground="#6B7280" />
+                                <TextBlock Text="{Binding Dashboard.ServiceCount}" FontSize="20" FontWeight="Bold" />
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="Listeners" FontSize="11" Foreground="#6B7280" />
+                                <TextBlock Text="{Binding Dashboard.ListenerCount}" FontSize="20" FontWeight="Bold" />
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="Inbound" FontSize="11" Foreground="#6B7280" />
+                                <TextBlock Text="{Binding Dashboard.InboundCount}" FontSize="20" FontWeight="Bold" Foreground="#059669" />
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="Outbound" FontSize="11" Foreground="#6B7280" />
+                                <TextBlock Text="{Binding Dashboard.OutboundCount}" FontSize="20" FontWeight="Bold" Foreground="#2563EB" />
+                            </StackPanel>
+                            <TextBlock Text="{Binding Dashboard.StatusLine}" VerticalAlignment="Center"
+                                       Foreground="#374151" TextWrapping="Wrap" />
+                            <CheckBox Content="Hide standard Windows services" VerticalAlignment="Center"
+                                      IsChecked="{Binding Dashboard.HideStandardServices}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,*,Auto,*">
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Registered services" FontWeight="SemiBold" Margin="2,0,0,4" />
+                        <DataGrid Grid.Row="1" Grid.Column="0" Margin="0,0,4,8" x:CompileBindings="False"
+                                  ItemsSource="{Binding Dashboard.Services}" IsReadOnly="True" CanUserResizeColumns="True"
+                                  GridLinesVisibility="Horizontal" CanUserSortColumns="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Display name" Binding="{Binding DisplayName}" Width="2*" />
+                                <DataGridTextColumn Header="State" Binding="{Binding State}" Width="Auto" />
+                                <DataGridTextColumn Header="Start" Binding="{Binding StartMode}" Width="Auto" />
+                                <DataGridTextColumn Header="PID" Binding="{Binding ProcessId}" Width="Auto" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="Listening endpoints" FontWeight="SemiBold" Margin="6,0,0,4" />
+                        <DataGrid Grid.Row="1" Grid.Column="1" Margin="4,0,0,8" x:CompileBindings="False"
+                                  ItemsSource="{Binding Dashboard.Listeners}" IsReadOnly="True" CanUserResizeColumns="True"
+                                  GridLinesVisibility="Horizontal" CanUserSortColumns="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Proto" Binding="{Binding Protocol}" Width="Auto" />
+                                <DataGridTextColumn Header="Local address" Binding="{Binding LocalAddress}" Width="170" />
+                                <DataGridTextColumn Header="Port" Binding="{Binding LocalPort}" Width="80" />
+                                <DataGridTextColumn Header="Service" Binding="{Binding ServiceOrProcess}" Width="*" />
+                                <DataGridTextColumn Header="Process" Binding="{Binding ProcessName}" Width="140" />
+                                <DataGridTextColumn Header="PID" Binding="{Binding ProcessId}" Width="Auto" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Text="Active connections" FontWeight="SemiBold" Margin="2,0,0,4" />
+                        <DataGrid Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" x:CompileBindings="False"
+                                  ItemsSource="{Binding Dashboard.ActiveConnections}" IsReadOnly="True" CanUserResizeColumns="True"
+                                  GridLinesVisibility="Horizontal" CanUserSortColumns="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Proto" Binding="{Binding Protocol}" Width="Auto" />
+                                <DataGridTextColumn Header="Direction" Binding="{Binding Direction}" Width="Auto" />
+                                <DataGridTextColumn Header="Scope" Binding="{Binding RemoteScope}" Width="Auto" />
+                                <DataGridTextColumn Header="Local address" Binding="{Binding LocalAddress}" Width="150" />
+                                <DataGridTextColumn Header="L.Port" Binding="{Binding LocalPort}" Width="75" />
+                                <DataGridTextColumn Header="Remote address" Binding="{Binding RemoteAddress}" Width="150" />
+                                <DataGridTextColumn Header="R.Port" Binding="{Binding RemotePort}" Width="75" />
+                                <DataGridTextColumn Header="Service" Binding="{Binding ServiceOrProcess}" Width="*" />
+                                <DataGridTextColumn Header="Process" Binding="{Binding ProcessName}" Width="140" />
+                                <DataGridTextColumn Header="PID" Binding="{Binding ProcessId}" Width="Auto" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </DockPanel>
+            </TabItem>
+
+            <!-- HISTORY -->
+            <TabItem Header="History">
+                <DockPanel>
+                    <Border DockPanel.Dock="Top" Background="#F3F4F6" Padding="12,8" Margin="0,0,0,8" CornerRadius="4">
+                        <StackPanel Spacing="8">
+                            <WrapPanel>
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="Process contains" FontSize="11" Foreground="#6B7280" />
+                                    <TextBox Width="140" Text="{Binding History.ProcessNameFilter}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="Remote contains" FontSize="11" Foreground="#6B7280" />
+                                    <TextBox Width="140" Text="{Binding History.RemoteAddressFilter}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="Process excludes" FontSize="11" Foreground="#6B7280" />
+                                    <TextBox Width="140" Text="{Binding History.ProcessNotContains}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="Remote excludes" FontSize="11" Foreground="#6B7280" />
+                                    <TextBox Width="140" Text="{Binding History.RemoteNotContains}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="Local port" FontSize="11" Foreground="#6B7280" />
+                                    <TextBox Width="80" Text="{Binding History.LocalPortFilter}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="Protocol" FontSize="11" Foreground="#6B7280" />
+                                    <ComboBox Width="85" ItemsSource="{Binding History.ProtocolOptions}"
+                                              SelectedItem="{Binding History.SelectedProtocol}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="Direction" FontSize="11" Foreground="#6B7280" />
+                                    <ComboBox Width="100" ItemsSource="{Binding History.DirectionOptions}"
+                                              SelectedItem="{Binding History.SelectedDirection}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="Family" FontSize="11" Foreground="#6B7280" />
+                                    <ComboBox Width="85" ItemsSource="{Binding History.FamilyOptions}"
+                                              SelectedItem="{Binding History.SelectedFamily}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="Scope" FontSize="11" Foreground="#6B7280" />
+                                    <ComboBox Width="110" ItemsSource="{Binding History.ScopeOptions}"
+                                              SelectedItem="{Binding History.SelectedScope}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="Hours back" FontSize="11" Foreground="#6B7280" />
+                                    <NumericUpDown Width="105" Minimum="1" Maximum="8760" Value="{Binding History.HoursBack}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="Row limit" FontSize="11" Foreground="#6B7280" />
+                                    <NumericUpDown Width="115" Minimum="100" Maximum="1000000" Increment="500" Value="{Binding History.Limit}" />
+                                </StackPanel>
+                            </WrapPanel>
+
+                            <WrapPanel>
+                                <CheckBox Content="Unique flows only" IsChecked="{Binding History.UniqueOnly}" Margin="0,0,16,0" />
+                                <CheckBox Content="Hide ephemeral ports" IsChecked="{Binding History.ExcludeEphemeral}" Margin="0,0,16,0" />
+                                <CheckBox Content="Hide same-subnet" IsChecked="{Binding History.HideSameSubnet}" Margin="0,0,16,0" />
+                                <Button Content="Run query" Command="{Binding History.RunQueryCommand}" Margin="0,0,8,0" />
+                                <Button Content="Export CSV" Command="{Binding History.ExportCsvCommand}" Margin="0,0,8,0" />
+                                <Button Content="Export JSON" Command="{Binding History.ExportJsonCommand}" Margin="0,0,16,0" />
+                                <Button Content="Export firewall PDF" Command="{Binding History.ExportFirewallPdfCommand}"
+                                        Background="#1F2937" Foreground="White" Margin="0,0,10,0" />
+                                <CheckBox Content="Resolve names" IsChecked="{Binding History.ResolveHostnames}" Margin="0,0,12,0"
+                                          VerticalAlignment="Center" />
+                                <CheckBox Content="Summarize /24" IsChecked="{Binding History.SummarizeSources}"
+                                          VerticalAlignment="Center" />
+                            </WrapPanel>
+                            <TextBlock Text="{Binding History.ResultSummary}" Foreground="#374151" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Raw samples grid -->
+                    <DataGrid x:CompileBindings="False" IsVisible="{Binding History.ShowRaw}"
+                              ItemsSource="{Binding History.Results}" IsReadOnly="True" CanUserResizeColumns="True"
+                              GridLinesVisibility="Horizontal" CanUserSortColumns="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Timestamp (local)"
+                                Binding="{Binding Timestamp, Converter={x:Static vm:LocalTimeConverter.Instance}}" Width="Auto" />
+                            <DataGridTextColumn Binding="{Binding Protocol}" Width="Auto">
+                                <DataGridTextColumn.Header>
+                                    <ctrl:FilterHeader DataContext="{Binding History.ProtocolCol}" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding Direction}" Width="Auto">
+                                <DataGridTextColumn.Header>
+                                    <ctrl:FilterHeader DataContext="{Binding History.DirectionCol}" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding RemoteScope}" Width="Auto">
+                                <DataGridTextColumn.Header>
+                                    <ctrl:FilterHeader DataContext="{Binding History.ScopeCol}" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding LocalAddress}" Width="150">
+                                <DataGridTextColumn.Header>
+                                    <ctrl:FilterHeader DataContext="{Binding History.LocalAddrCol}" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding LocalPort}" Width="75">
+                                <DataGridTextColumn.Header>
+                                    <ctrl:FilterHeader DataContext="{Binding History.LocalPortCol}" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding RemoteAddress}" Width="150">
+                                <DataGridTextColumn.Header>
+                                    <ctrl:FilterHeader DataContext="{Binding History.RemoteAddrCol}" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding RemotePort}" Width="75">
+                                <DataGridTextColumn.Header>
+                                    <ctrl:FilterHeader DataContext="{Binding History.RemotePortCol}" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding ServiceOrProcess}" Width="*">
+                                <DataGridTextColumn.Header>
+                                    <ctrl:FilterHeader DataContext="{Binding History.ServiceCol}" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding ProcessName}" Width="140">
+                                <DataGridTextColumn.Header>
+                                    <ctrl:FilterHeader DataContext="{Binding History.ProcessCol}" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="PID" Binding="{Binding ProcessId}" Width="Auto" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Unique flows grid -->
+                    <DataGrid x:CompileBindings="False" IsVisible="{Binding History.ShowUnique}"
+                              ItemsSource="{Binding History.UniqueResults}" IsReadOnly="True" CanUserResizeColumns="True"
+                              GridLinesVisibility="Horizontal" CanUserSortColumns="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="First seen"
+                                Binding="{Binding FirstSeen, Converter={x:Static vm:LocalTimeConverter.Instance}}" Width="Auto" />
+                            <DataGridTextColumn Header="Last seen"
+                                Binding="{Binding LastSeen, Converter={x:Static vm:LocalTimeConverter.Instance}}" Width="Auto" />
+                            <DataGridTextColumn Header="Count" Binding="{Binding SampleCount}" Width="Auto" />
+                            <DataGridTextColumn Binding="{Binding Protocol}" Width="Auto">
+                                <DataGridTextColumn.Header>
+                                    <ctrl:FilterHeader DataContext="{Binding History.ProtocolCol}" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding Direction}" Width="Auto">
+                                <DataGridTextColumn.Header>
+                                    <ctrl:FilterHeader DataContext="{Binding History.DirectionCol}" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding RemoteScope}" Width="Auto">
+                                <DataGridTextColumn.Header>
+                                    <ctrl:FilterHeader DataContext="{Binding History.ScopeCol}" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding LocalAddress}" Width="150">
+                                <DataGridTextColumn.Header>
+                                    <ctrl:FilterHeader DataContext="{Binding History.LocalAddrCol}" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding LocalPort}" Width="75">
+                                <DataGridTextColumn.Header>
+                                    <ctrl:FilterHeader DataContext="{Binding History.LocalPortCol}" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding RemoteAddress}" Width="150">
+                                <DataGridTextColumn.Header>
+                                    <ctrl:FilterHeader DataContext="{Binding History.RemoteAddrCol}" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding RemotePort}" Width="75">
+                                <DataGridTextColumn.Header>
+                                    <ctrl:FilterHeader DataContext="{Binding History.RemotePortCol}" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding ServiceOrProcess}" Width="*">
+                                <DataGridTextColumn.Header>
+                                    <ctrl:FilterHeader DataContext="{Binding History.ServiceCol}" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                                <DataGridTextColumn Binding="{Binding ProcessName}" Width="140">
+                                <DataGridTextColumn.Header>
+                                    <ctrl:FilterHeader DataContext="{Binding History.ProcessCol}" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+
+            <!-- ANNOTATIONS -->
+            <TabItem Header="Annotations">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Margin="2,0,0,6" Foreground="#374151"
+                               Text="Tag processes, ports, and hosts with friendly names, owners, and criticality. These enrich the firewall PDF." />
+                    <Border DockPanel.Dock="Bottom" Background="#F3F4F6" Padding="12" Margin="0,8,0,0" CornerRadius="4">
+                        <StackPanel Spacing="8">
+                            <WrapPanel>
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="Kind" FontSize="11" Foreground="#6B7280" />
+                                    <ComboBox Width="110" ItemsSource="{Binding Annotations.KindOptions}"
+                                              SelectedItem="{Binding Annotations.SelectedKind}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="Key (process / port / host)" FontSize="11" Foreground="#6B7280" />
+                                    <TextBox Width="200" Text="{Binding Annotations.Key}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="Friendly name" FontSize="11" Foreground="#6B7280" />
+                                    <TextBox Width="200" Text="{Binding Annotations.FriendlyName}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="Owner" FontSize="11" Foreground="#6B7280" />
+                                    <TextBox Width="150" Text="{Binding Annotations.Owner}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="Criticality" FontSize="11" Foreground="#6B7280" />
+                                    <ComboBox Width="110" ItemsSource="{Binding Annotations.CriticalityOptions}"
+                                              SelectedItem="{Binding Annotations.SelectedCriticality}" />
+                                </StackPanel>
+                            </WrapPanel>
+                            <StackPanel>
+                                <TextBlock Text="Notes" FontSize="11" Foreground="#6B7280" />
+                                <TextBox Text="{Binding Annotations.Notes}" AcceptsReturn="True" Height="46" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="Save / Update" Command="{Binding Annotations.SaveCommand}"
+                                        Background="#1F2937" Foreground="White" />
+                                <Button Content="New" Command="{Binding Annotations.NewCommand}" />
+                                <Button Content="Delete selected" Command="{Binding Annotations.DeleteCommand}" />
+                                <TextBlock Text="{Binding Annotations.Status}" VerticalAlignment="Center" Foreground="#374151" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                    <DataGrid x:CompileBindings="False" ItemsSource="{Binding Annotations.Items}"
+                              SelectedItem="{Binding Annotations.SelectedItem}" IsReadOnly="True" CanUserResizeColumns="True"
+                              GridLinesVisibility="Horizontal" CanUserSortColumns="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Kind" Binding="{Binding Kind}" Width="Auto" />
+                            <DataGridTextColumn Header="Key" Binding="{Binding Key}" Width="*" />
+                            <DataGridTextColumn Header="Friendly name" Binding="{Binding FriendlyName}" Width="*" />
+                            <DataGridTextColumn Header="Owner" Binding="{Binding Owner}" Width="*" />
+                            <DataGridTextColumn Header="Criticality" Binding="{Binding Criticality}" Width="Auto" />
+                            <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="2*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+
+            <!-- MAP -->
+            <TabItem Header="Map">
+                <DockPanel>
+                    <Border DockPanel.Dock="Top" Background="#F3F4F6" Padding="12,8" Margin="0,0,0,8" CornerRadius="4">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Hours back" FontSize="11" Foreground="#6B7280" VerticalAlignment="Center" Margin="8,0,0,0" />
+                            <NumericUpDown Width="120" Minimum="1" Maximum="8760" Value="{Binding Map.HoursBack}" />
+                            <TextBlock Text="Max peers" FontSize="11" Foreground="#6B7280" VerticalAlignment="Center" Margin="8,0,0,0" />
+                            <NumericUpDown Width="100" Minimum="5" Maximum="200" Value="{Binding Map.MaxPeers}" />
+                            <Button Content="Refresh map" Command="{Binding Map.RefreshCommand}" Background="#1F2937" Foreground="White" />
+                            <TextBlock Text="{Binding Map.Status}" VerticalAlignment="Center" Foreground="#374151" />
+                        </StackPanel>
+                    </Border>
+                    <Border BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="4">
+                        <ctrl:DependencyMapControl Nodes="{Binding Map.Nodes}" Edges="{Binding Map.Edges}" />
+                    </Border>
+                </DockPanel>
+            </TabItem>
+
+            <!-- SETTINGS -->
+            <TabItem Header="Settings">
+                <ScrollViewer>
+                    <StackPanel Spacing="16" Margin="4" MaxWidth="720" HorizontalAlignment="Left">
+                        <TextBlock Text="Collector service" FontSize="15" FontWeight="Bold" />
+                        <Border Background="#F3F4F6" Padding="12" CornerRadius="4">
+                            <StackPanel Spacing="10">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="Status:" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Settings.ServiceStatus}" VerticalAlignment="Center" />
+                                    <Button Content="Refresh" Command="{Binding Settings.RefreshServiceStatusCommand}" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8" IsEnabled="{Binding Settings.ServiceControlSupported}">
+                                    <Button Content="Install" Command="{Binding Settings.InstallServiceCommand}" />
+                                    <Button Content="Start" Command="{Binding Settings.StartServiceCommand}" />
+                                    <Button Content="Stop" Command="{Binding Settings.StopServiceCommand}" />
+                                    <Button Content="Uninstall" Command="{Binding Settings.UninstallServiceCommand}" />
+                                </StackPanel>
+                                <TextBlock Text="Install/Start/Stop prompt for administrator elevation (UAC)."
+                                           FontSize="11" Foreground="#6B7280" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="Data source" FontSize="15" FontWeight="Bold" />
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Database path" FontSize="11" Foreground="#6B7280" />
+                            <TextBox Text="{Binding Settings.DatabasePath}" />
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Export directory" FontSize="11" Foreground="#6B7280" />
+                            <TextBox Text="{Binding Settings.ExportDirectory}" />
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Dashboard refresh (seconds)" FontSize="11" Foreground="#6B7280" />
+                            <NumericUpDown Width="140" HorizontalAlignment="Left" Minimum="1" Maximum="300"
+                                           Value="{Binding Settings.RefreshIntervalSeconds}" />
+                        </StackPanel>
+                        <Button Content="Apply settings" Command="{Binding Settings.ApplySettingsCommand}" HorizontalAlignment="Left" />
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+        </TabControl>
+    </DockPanel>
+</Window>

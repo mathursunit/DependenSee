@@ -1,0 +1,27 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="ServiceMap.App.Views.AboutWindow"
+        Width="420" Height="360"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Title="About Carrier DependenSee">
+    <Border Background="White" Padding="24">
+        <StackPanel Spacing="10" HorizontalAlignment="Center">
+            <Image x:Name="LogoImage" Height="96" Stretch="Uniform" />
+            <TextBlock Text="Carrier DependenSee" FontSize="20" FontWeight="Bold"
+                       Foreground="#1F2937" HorizontalAlignment="Center" />
+            <TextBlock Text="See what connects." FontSize="13" Foreground="#2563EB"
+                       HorizontalAlignment="Center" />
+            <TextBlock x:Name="VersionText" FontSize="12" Foreground="#6B7280"
+                       HorizontalAlignment="Center" Margin="0,6,0,0" />
+            <Border Height="1" Background="#E5E7EB" Margin="0,8" />
+            <TextBlock x:Name="CreditText" FontSize="13" Foreground="#374151"
+                       HorizontalAlignment="Center" />
+            <TextBlock x:Name="CopyrightText" FontSize="11" Foreground="#9CA3AF"
+                       HorizontalAlignment="Center" TextWrapping="Wrap"
+                       TextAlignment="Center" />
+            <Button Content="Close" Click="OnClose" HorizontalAlignment="Center"
+                    Margin="0,10,0,0" Padding="20,4" />
+        </StackPanel>
+    </Border>
+</Window>

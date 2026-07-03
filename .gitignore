@@ -1,0 +1,24 @@
+## .NET
+bin/
+obj/
+*.user
+.vs/
+artifacts/
+
+## Rider
+.idea/
+
+## Local data
+*.db
+*.db-wal
+*.db-shm
+
+## OS
+Thumbs.db
+.DS_Store
+
+## Build outputs & installers (publish via GitHub Releases, not source control)
+dist/
+*.msi
+*.wixpdb
+build/

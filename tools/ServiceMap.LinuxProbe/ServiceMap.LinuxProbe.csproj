@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ServiceMap.Core\ServiceMap.Core.csproj" />
+    <ProjectReference Include="..\..\src\ServiceMap.Platform.Abstractions\ServiceMap.Platform.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\ServiceMap.Platform.Linux\ServiceMap.Platform.Linux.csproj" />
+  </ItemGroup>
+
+</Project>

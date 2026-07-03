@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ServiceMap.Core\ServiceMap.Core.csproj" />
+    <ProjectReference Include="..\ServiceMap.Platform.Abstractions\ServiceMap.Platform.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

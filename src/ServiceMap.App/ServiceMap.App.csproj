@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- Cross-platform TFM: Avalonia runs the same GUI on Windows now and Linux
+         later. Windows-only calls (service control) are guarded at runtime. -->
+    <TargetFramework>net8.0</TargetFramework>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
+    <AssemblyName>CarrierDependenSee.App</AssemblyName>
+
+    <!-- Self-contained single-file publish settings. They only take effect during
+         a self-contained single-file publish, so a normal build is unaffected.
+         Trimming is left OFF because WMI and Avalonia rely on reflection. -->
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <PublishTrimmed>false</PublishTrimmed>
+    <ApplicationIcon Condition="Exists('..\..\assets\DependenSee.ico')">..\..\assets\DependenSee.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.2.1" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.2.1" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.2.1" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.2.1" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" Version="11.2.1" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ServiceMap.Core\ServiceMap.Core.csproj" />
+    <ProjectReference Include="..\ServiceMap.Reporting\ServiceMap.Reporting.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Branding assets copied next to the exe; picked up at runtime if present. -->
+    <None Include="..\..\assets\DependenSee.ico" Link="assets\DependenSee.ico"
+          Condition="Exists('..\..\assets\DependenSee.ico')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\assets\DependenSee.png" Link="assets\DependenSee.png"
+          Condition="Exists('..\..\assets\DependenSee.png')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Carrier DependenSee installer (WiX v5).
+  Installs the self-contained collector and GUI, registers and starts the
+  Windows Service, adds a Start Menu shortcut and an Add/Remove Programs entry,
+  and cleanly stops + removes the service on uninstall.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+
+  <?ifndef Version ?><?define Version = "1.3.0.0" ?><?endif?>
+
+  <Package Name="Carrier DependenSee"
+           Manufacturer="Carrier"
+           Version="$(var.Version)"
+           UpgradeCode="9C2F1A77-4B3E-4D21-A0C8-7E5B9F6A1D34"
+           Scope="perMachine"
+           Compressed="yes">
+
+    <SummaryInformation Description="Carrier DependenSee - See what connects." />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Property Id="ARPCOMMENTS" Value="Maps services and records inbound/outbound connections for cloud migration." />
+    <Property Id="ARPCONTACT" Value="Carrier" />
+
+    <?ifdef LogoIco ?>
+      <Icon Id="AppIcon.ico" SourceFile="$(var.LogoIco)" />
+      <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
+    <?endif?>
+
+    <Feature Id="Main" Title="Carrier DependenSee" Level="1" Display="expand"
+             Description="Collector service and desktop viewer.">
+      <ComponentGroupRef Id="CollectorComponents" />
+      <ComponentGroupRef Id="AppComponents" />
+      <ComponentRef Id="AppStartMenuShortcut" />
+    </Feature>
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="Carrier DependenSee">
+        <Directory Id="CollectorDir" Name="collector" />
+        <Directory Id="AppDir" Name="app" />
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="AppMenuDir" Name="Carrier DependenSee" />
+    </StandardDirectory>
+
+    <!-- Collector exe + Windows Service registration -->
+    <ComponentGroup Id="CollectorComponents" Directory="CollectorDir">
+      <Component Id="CollectorExeComp" Bitness="always64">
+        <File Id="CollectorExe"
+              Source="$(var.SrcDist)/collector/CarrierDependenSee.Collector.exe"
+              KeyPath="yes" />
+        <ServiceInstall Id="CollectorServiceInstall"
+                        Name="CarrierDependenSeeCollector"
+                        DisplayName="Carrier DependenSee Collector"
+                        Description="Maps registered services and samples inbound/outbound connections over time."
+                        Type="ownProcess"
+                        Start="auto"
+                        ErrorControl="normal"
+                        Account="LocalSystem"
+                        Vital="yes" />
+        <ServiceControl Id="CollectorServiceControl"
+                        Name="CarrierDependenSeeCollector"
+                        Start="install"
+                        Stop="both"
+                        Remove="uninstall"
+                        Wait="yes" />
+      </Component>
+      <Component Id="AppSettingsComp" Bitness="always64">
+        <File Id="AppSettings"
+              Source="$(var.SrcDist)/collector/appsettings.json"
+              KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <!-- GUI exe -->
+    <ComponentGroup Id="AppComponents" Directory="AppDir">
+      <Component Id="AppExeComp" Bitness="always64">
+        <File Id="AppExe"
+              Source="$(var.SrcDist)/app/CarrierDependenSee.App.exe"
+              KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <!-- Start Menu shortcut for the GUI -->
+    <Component Id="AppStartMenuShortcut" Directory="AppMenuDir" Bitness="always64"
+               Guid="A1F2E3D4-5C6B-47A8-9E0F-1B2C3D4E5F60">
+      <Shortcut Id="AppShortcut"
+                Name="Carrier DependenSee"
+                Description="See what connects."
+                Target="[#AppExe]"
+                WorkingDirectory="AppDir" />
+      <RemoveFolder Id="RemoveAppMenuDir" Directory="AppMenuDir" On="uninstall" />
+      <RegistryValue Root="HKCU" Key="Software\Carrier\DependenSee" Name="installed"
+                     Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+
+  </Package>
+</Wix>

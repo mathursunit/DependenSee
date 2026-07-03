@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Cross-platform (no System.Drawing) so the report engine runs anywhere. -->
+    <PackageReference Include="PDFsharp-MigraDoc" Version="6.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ServiceMap.Core\ServiceMap.Core.csproj" />
+  </ItemGroup>
+
+</Project>
