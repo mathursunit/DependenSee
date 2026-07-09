@@ -14,6 +14,15 @@ public sealed class ConnectionQuery
     /// <summary>Match a specific local port.</summary>
     public int? LocalPort { get; set; }
 
+    /// <summary>Exclude a specific local port.</summary>
+    public int? LocalPortNot { get; set; }
+
+    /// <summary>Case-insensitive substring match on local address.</summary>
+    public string? LocalAddress { get; set; }
+
+    /// <summary>Exclude rows whose local address contains this substring.</summary>
+    public string? LocalNotContains { get; set; }
+
     /// <summary>Case-insensitive substring match on remote address.</summary>
     public string? RemoteAddress { get; set; }
 

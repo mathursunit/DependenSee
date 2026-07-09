@@ -3,16 +3,23 @@
              xmlns:ctrl="clr-namespace:ServiceMap.App.Controls"
              x:Class="ServiceMap.App.Controls.FilterHeader"
              x:CompileBindings="False">
-    <DockPanel LastChildFill="False">
-        <TextBlock Text="{Binding Header}" VerticalAlignment="Center" DockPanel.Dock="Left" />
-        <Button DockPanel.Dock="Right" Padding="4,0" Margin="6,0,0,0"
-                Background="Transparent" BorderThickness="0" FontSize="9"
-                Content="&#x25BC;" ToolTip.Tip="Filter this column"
-                Foreground="{Binding IsActive, Converter={x:Static ctrl:FunnelBrush.Instance}}">
+    <!-- Funnel button is docked FIRST so it always reserves space and never
+         clips on narrow columns; the title fills the rest and trims if needed. -->
+    <DockPanel LastChildFill="True">
+        <Button DockPanel.Dock="Right" Padding="5,1" Margin="6,0,0,0"
+                VerticalAlignment="Center"
+                Background="#E5E7EB" BorderBrush="#9CA3AF" BorderThickness="1"
+                CornerRadius="3" FontSize="10"
+                ToolTip.Tip="Filter this column">
+            <StackPanel Orientation="Horizontal" Spacing="2">
+                <TextBlock Text="&#x25BC;"
+                           Foreground="{Binding IsActive, Converter={x:Static ctrl:FunnelBrush.Instance}}" />
+            </StackPanel>
             <Button.Flyout>
                 <Flyout Placement="Bottom">
                     <StackPanel Width="230" Spacing="6">
-                        <TextBox Watermark="Search values…" Text="{Binding Search}" />
+                        <TextBlock Text="{Binding Header}" FontWeight="SemiBold" />
+                        <TextBox Watermark="Search values&#x2026;" Text="{Binding Search}" />
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <Button Content="Select all" Command="{Binding SelectAllCommand}" />
                             <Button Content="Clear" Command="{Binding ClearAllCommand}" />
@@ -30,5 +37,7 @@
                 </Flyout>
             </Button.Flyout>
         </Button>
+        <TextBlock Text="{Binding Header}" VerticalAlignment="Center"
+                   TextTrimming="CharacterEllipsis" />
     </DockPanel>
 </UserControl>

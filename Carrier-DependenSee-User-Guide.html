@@ -59,7 +59,7 @@
        onerror="this.style.display='none'">
   <div>
     <h1>Carrier DependenSee — User Guide</h1>
-    <p>See what connects. · Service &amp; connection mapping for cloud migration · Version 1.3.0</p>
+    <p>See what connects. · Service &amp; connection mapping for cloud migration · Version 1.6.0</p>
   </div>
 </header>
 
@@ -78,6 +78,10 @@
   <a href="#firewall">Firewall PDF report</a>
   <a href="#annotations">Annotations</a>
   <a href="#map">Dependency map</a>
+  <a href="#remote">Remote collection</a>
+  <a href="#fleet">Fleet view</a>
+  <a href="#activemachine">Viewing any server</a>
+  <a href="#firewall">Firewall reconciliation</a>
   <a href="#settings">Settings tab</a>
   <h2>Reference</h2>
   <a href="#reading">Reading the data</a>
@@ -171,6 +175,25 @@
 <h2 class="sec" id="map">Dependency map</h2>
 <p>The <b>Map</b> tab draws the dependencies as a node graph — the machine sits at the center with its peers around it — node color shows scope (gray = private, red = internet), edge color shows direction (blue = outbound, green = inbound), and peer size reflects traffic volume. Adjust the time window and max peers, then click <b>Refresh map</b>.</p>
 
+<h2 class="sec" id="remote">Remote collection (agentless)</h2>
+<p>The <b>Remote</b> tab collects services and connections from other servers <i>without installing anything on them</i>. Windows targets are read over <b>WinRM / PowerShell Remoting</b>; Linux targets over <b>SSH</b>. Enter one or more hosts — single names/IPs, dashed ranges (<code>10.0.0.20-40</code>), or CIDR blocks (<code>10.1.0.0/24</code>) — pick the OS/transport (or leave it on <b>Auto</b>), supply a username and password (or an SSH private key), and click <b>Scan</b>. Progress streams into the log, and each host that responds is saved as its own database and added to the <b>Fleet</b> view automatically. <b>Continuous collection:</b> a remote scan is a point-in-time snapshot, but you can schedule it. Enter a profile name and an interval, then click <b>Schedule</b> — Carrier DependenSee registers a Windows Scheduled Task that re-runs the scan on that cadence (even when the viewer is closed), building history in each host's database. Use an <b>SSH key</b> for unattended Linux runs so no password is stored; for password profiles the password is saved DPAPI-encrypted for your Windows account. Click <b>Unschedule</b> to remove the task.</p>
+<div class="callout"><b>Prerequisites &amp; safety:</b> only scan systems you are authorized to access. Windows targets need WinRM enabled (<code>Enable-PSRemoting</code>; for workgroup hosts add them to the client's <code>TrustedHosts</code>). Linux targets need SSH reachable. Privileged credentials (local admin / WinRM, or root / sudo) are needed for full process-to-service attribution. Credentials are used only for the scan and are <b>not saved</b>.</div>
+
+<h2 class="sec" id="fleet">Fleet view</h2>
+<p>The <b>Fleet</b> tab shows every machine you've collected — whether imported from a <code>servicemap.db</code> file or gathered on the Remote tab — unioned together. It lists each machine's unique flows and, most usefully for migration planning, the <b>machine-to-machine dependencies</b>: which servers talk to which. Assign each machine a <b>wave</b> and the view flags dependencies that cross a wave boundary, so you can group chatty systems into the same migration wave. <b>Select a machine</b> in the list to narrow the flows and dependencies to just that server, and click <b>Export server PDF</b> to generate a firewall-rule report scoped to that one machine — the same migration-ready document as the History tab.</p>
+
+<h2 class="sec" id="activemachine">Viewing any server (active machine)</h2>
+<p>The <b>Machine</b> dropdown in the top-right switches which server the <b>Dashboard</b>, <b>History</b>, <b>Map</b>, and firewall PDF are showing. Pick <b>Local (this machine)</b> for the live collector, or any fleet/remote machine to explore its snapshot with the full toolset — exactly as you would the local server. From the <b>Fleet</b> tab you can also select a machine and click <b>View this server</b> to jump straight to it. A banner appears while a remote snapshot is active (service controls are disabled, since they only apply to the local collector); switch back to Local to return.</p>
+
+<h2 class="sec" id="firewall">Firewall reconciliation</h2>
+<p>The <b>Firewall</b> tab compares what each server actually connects to against your firewall policy. Point <b>Policy folder</b> at a folder of exported CSVs (Palo Alto egress/ingress rules, a Check Point rule export, and the address-group objects) and click <b>Load policy</b>. Then choose a server and click <b>Reconcile</b>. For every observed flow it:</p>
+<ul>
+  <li><b>Resolves the remote IP</b> to its firewall <b>object</b> and <b>group</b> membership (e.g. <code>10.94.9.167 &rarr; cmusswhadpdc01</code>).</li>
+  <li><b>Classifies coverage</b>: <b>Covered</b> (an existing allow rule permits it, and names the rule), <b>Gap</b> (real traffic with no rule &mdash; a firewall change needed for migration), or <b>Denied</b> (matched by a specific block rule).</li>
+</ul>
+<p>Filter by coverage (e.g. show only <b>Gap</b> to get the net-new rules list) and <b>Export CSV</b> for your network team. The firewall files are read as-is and indexed in memory; re-load whenever you receive fresh exports.</p>
+<div class="callout"><b>Notes:</b> matching is port-based (Palo Alto app-id is advisory); Check Point objects can only be resolved where their IP is known, so on-prem coverage improves once an address-object export is available. NAT boundaries can make observed IPs differ from rule IPs.</div>
+
 <h2 class="sec" id="settings">Settings tab</h2>
 <p>Shows the collector service status with <b>Install / Start / Stop / Uninstall</b> buttons (each prompts for elevation). Below that you can set the <b>Database path</b>, <b>Export directory</b>, and <b>Dashboard refresh</b> interval — click <b>Apply settings</b> after changes. Normally the MSI has already installed and started the service, so you won't need these buttons.</p>
 
@@ -231,6 +254,15 @@
 <h3>What about IPv6?</h3>
 <p>IPv6 is always collected. The Family filter lets you focus on IPv4 (the usual migration case) or IPv6 as needed.</p>
 <h3>Linux?</h3>
+<h2>What's new in 1.7&ndash;1.9</h2>
+<ul>
+  <li><b>ETW event capture</b> &mdash; short-lived connections between polling sweeps are now recorded (requires the collector to run elevated).</li>
+  <li><b>Flow aggregation</b> &mdash; distinct dependencies are stored compactly; raw samples keep 7 days, flows keep 30 (configurable).</li>
+  <li><b>Remote scan bursts &amp; conntrack</b> &mdash; scheduled agentless scans take several snapshots per session and harvest recently-closed flows from Linux connection tracking.</li>
+  <li><b>Firewall reconciliation</b> &mdash; protocol-aware matching, multi-file policy loading, rule zones in the grid, and <i>Find unused rules</i> (allow rules never exercised in the window).</li>
+  <li><b>Coverage honesty</b> &mdash; the firewall PDF states how many sweeps its data represents and how it was collected.</li>
+  <li><b>Fixes</b> &mdash; History/flow timestamps now display correctly; direction inference survives listener restarts.</li>
+</ul>
 <p>A Linux version is on the roadmap. This release is for Windows.</p>
 
 </main>

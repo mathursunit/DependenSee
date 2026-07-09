@@ -1,4 +1,5 @@
 using ServiceMap.Core.Models;
+using ServiceMap.Core.Net;
 using ServiceMap.Platform.Abstractions;
 using ServiceMap.Platform.Windows.Interop;
 
@@ -7,10 +8,14 @@ namespace ServiceMap.Platform.Windows;
 /// <summary>
 /// Samples TCP connections and TCP/UDP listeners via iphlpapi, attributing each
 /// to its owning process. Direction is inferred from the set of local ports the
-/// host is listening on in the same sweep.
+/// host has recently been listening on — a <see cref="ListenPortTracker"/> keeps
+/// listen knowledge across sweeps so a listener that restarts (or races the
+/// snapshot) doesn't flip its established connections to outbound.
 /// </summary>
 public sealed class WindowsConnectionSampler : IConnectionSampler
 {
+    private readonly ListenPortTracker _listenTracker = new();
+
     public IReadOnlyList<ConnectionSample> Sample()
     {
         var timestamp = DateTime.UtcNow;
@@ -19,27 +24,23 @@ public sealed class WindowsConnectionSampler : IConnectionSampler
 
         var tcp = IpHlpApi.GetTcpConnections();
 
-        // Build the set of ports this host is actively listening on so we can
-        // classify established connections as inbound vs outbound.
-        var listeningPorts = new HashSet<int>();
+        // Record every port observed listening this sweep; the tracker keeps
+        // ports from recent sweeps alive so inference survives restarts.
         foreach (var row in tcp)
         {
             if ((TcpState)row.State == TcpState.Listen)
-                listeningPorts.Add(row.LocalPort);
+                _listenTracker.Observe(row.LocalPort, timestamp);
         }
+        _listenTracker.Sweep(timestamp);
 
         foreach (var row in tcp)
         {
             var state = (TcpState)row.State;
             var (name, path) = processes.Resolve(row.ProcessId);
 
-            ConnectionDirection direction = state switch
-            {
-                TcpState.Listen => ConnectionDirection.Listen,
-                _ => listeningPorts.Contains(row.LocalPort)
-                    ? ConnectionDirection.Inbound
-                    : ConnectionDirection.Outbound
-            };
+            var direction = DirectionClassifier.Classify(
+                Protocol.Tcp, state, row.LocalPort,
+                p => _listenTracker.IsListening(p, timestamp));
 
             results.Add(new ConnectionSample
             {

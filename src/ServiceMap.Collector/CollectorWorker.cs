@@ -40,6 +40,7 @@ public sealed class CollectorWorker : BackgroundService
     {
         _repository.Initialize();
         _repository.SetMeta("machine_name", Environment.MachineName);
+        _repository.SetMeta("collection_source", "local-collector");
         _log.LogInformation(
             "Carrier DependenSee collector started on {Platform}. Elevated={Elevated}. DB={Db}",
             _engine.PlatformName, _engine.IsElevated, _options.DatabasePath);
@@ -49,6 +50,18 @@ public sealed class CollectorWorker : BackgroundService
             _log.LogWarning(
                 "Not running elevated. Port-to-process attribution and some service " +
                 "details may be incomplete. Run the service under LocalSystem or an admin account.");
+        }
+
+        if (_engine.EventCaptureActive)
+        {
+            _log.LogInformation(
+                "ETW event capture active: short-lived connections between sweeps will be recorded.");
+        }
+        else if (_options.EventCaptureEnabled)
+        {
+            _log.LogWarning(
+                "ETW event capture unavailable ({Reason}); short-lived connections " +
+                "between sweeps may be missed.", _engine.EventCaptureError ?? "unknown");
         }
 
         var interval = TimeSpan.FromSeconds(Math.Max(1, _options.SamplingIntervalSeconds));
@@ -116,12 +129,17 @@ public sealed class CollectorWorker : BackgroundService
             return;
         try
         {
-            var cutoff = DateTime.UtcNow.AddDays(-_options.RetentionDays);
-            int removed = _repository.PruneConnectionsOlderThan(cutoff);
+            // Raw per-sweep rows are bulky and short-lived; aggregated flows are
+            // tiny and keep the migration view for the full retention window.
+            var rawDays = Math.Min(Math.Max(1, _options.RawRetentionDays), _options.RetentionDays);
+            var rawCutoff = DateTime.UtcNow.AddDays(-rawDays);
+            var flowCutoff = DateTime.UtcNow.AddDays(-_options.RetentionDays);
+            int removed = _repository.PruneConnectionsOlderThan(rawCutoff, flowCutoff);
             _lastPrune = DateTime.UtcNow;
             if (removed > 0)
-                _log.LogInformation("Pruned {Count} samples older than {Days} days.",
-                    removed, _options.RetentionDays);
+                _log.LogInformation(
+                    "Pruned {Count} raw samples older than {RawDays} days (flows kept {FlowDays} days).",
+                    removed, rawDays, _options.RetentionDays);
         }
         catch (Exception ex)
         {

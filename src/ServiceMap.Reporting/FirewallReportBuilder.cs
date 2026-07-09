@@ -26,7 +26,9 @@ public static class FirewallReportBuilder
             MachineName = Environment.MachineName,
             FilterSummary = options.FilterSummary,
             LogoPath = options.LogoPath,
-            GeneratedUtc = DateTime.UtcNow
+            GeneratedUtc = DateTime.UtcNow,
+            SweepCount = long.TryParse(repo.GetMeta("sweep_count"), out var sweeps) ? sweeps : 0,
+            CollectionSource = repo.GetMeta("collection_source") ?? string.Empty
         };
         foreach (var ip in LocalIpv4Addresses()) report.MachineAddresses.Add(ip);
 

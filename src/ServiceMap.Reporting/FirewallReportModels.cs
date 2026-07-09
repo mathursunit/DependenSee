@@ -69,6 +69,12 @@ public sealed class FirewallReport
     public DateTime? WindowEnd { get; set; }
     public DateTime GeneratedUtc { get; set; } = DateTime.UtcNow;
     public string FilterSummary { get; set; } = string.Empty;
+
+    /// <summary>Total sampling sweeps recorded in the source database (0 = unknown).</summary>
+    public long SweepCount { get; set; }
+
+    /// <summary>How the data was collected: "local-collector" or "remote-scan".</summary>
+    public string CollectionSource { get; set; } = string.Empty;
     public string? LogoPath { get; set; }
 
     public List<InboundRule> Inbound { get; } = new();

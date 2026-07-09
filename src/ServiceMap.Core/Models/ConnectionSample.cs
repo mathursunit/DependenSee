@@ -44,6 +44,16 @@ public sealed class ConnectionSample
     /// <summary>UTC time this observation was taken.</summary>
     public DateTime Timestamp { get; set; }
 
+    /// <summary>
+    /// Local-time display form of <see cref="Timestamp"/>. Grids bind this
+    /// pre-formatted string directly: binding DateTime cells through an
+    /// IValueConverter proved unreliable in the DataGrid, rendering default
+    /// dates (0001-01-01) despite correct data.
+    /// </summary>
+    public string TimestampLocal => Timestamp == default
+        ? string.Empty
+        : Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss");
+
     /// <summary>Convenience "addr:port" rendering of the local endpoint.</summary>
     public string LocalEndpoint => FormatEndpoint(LocalAddress, LocalPort);
 

@@ -12,6 +12,7 @@ public sealed class AppSettings
     public string DatabasePath { get; set; } = new CollectorOptions().DatabasePath;
     public int RefreshIntervalSeconds { get; set; } = 5;
     public string ExportDirectory { get; set; } = new CollectorOptions().ExportDirectory;
+    public string FirewallPolicyFolder { get; set; } = string.Empty;
 
     private static string SettingsPath
     {

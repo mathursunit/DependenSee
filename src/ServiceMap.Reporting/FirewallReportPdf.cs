@@ -87,6 +87,8 @@ public static class FirewallReportPdf
         meta.AddLineBreak();
         AddLabelled(meta, "Observation window", FormatWindow(report));
         meta.AddLineBreak();
+        AddLabelled(meta, "Collection coverage", FormatCoverage(report));
+        meta.AddLineBreak();
         AddLabelled(meta, "Filters", report.FilterSummary);
         meta.AddLineBreak();
         AddLabelled(meta, "Generated", report.GeneratedUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm"));
@@ -213,7 +215,8 @@ public static class FirewallReportPdf
         p.Format.Font.Color = Muted;
         string[] notes =
         {
-            "Rules reflect traffic OBSERVED during the window above. Rare or periodic flows may be missed — scan for a representative period before finalizing rules.",
+            "Rules reflect traffic OBSERVED during the window above. Rare or periodic flows may be missed — scan for a representative period (including nightly and month-end peaks) before finalizing rules.",
+            "Collection combines periodic polling with ETW event capture where available. If the collector ran without elevation, ETW is disabled and connections shorter than the sampling interval may be absent.",
             "Ephemeral client ports are intentionally excluded; inbound rules key on the service (local) port, outbound rules on the destination port.",
             "Outbound internet destinations are listed by IP. IPs can change — prefer FQDN-based egress rules where your platform supports them.",
             "\"Internet\" means a routable public address; \"Private\" covers RFC1918, CGNAT, loopback and link-local."
@@ -269,6 +272,32 @@ public static class FirewallReportPdf
         var l = p.AddFormattedText(label + ": ", TextFormat.Bold);
         l.Color = Ink;
         p.AddText(value);
+    }
+
+    /// <summary>
+    /// Human-readable observation density, so a report from an hourly remote
+    /// scan is never mistaken for one from 5-second local collection.
+    /// </summary>
+    private static string FormatCoverage(FirewallReport report)
+    {
+        var source = report.CollectionSource switch
+        {
+            "local-collector" => "local collector (continuous)",
+            "remote-scan" => "remote scan (agentless snapshots)",
+            _ => "unknown source"
+        };
+        if (report.SweepCount <= 0) return source;
+
+        var text = $"{report.SweepCount:N0} sweeps via {source}";
+        if (report.SweepCount > 1 && report.WindowStart is { } ws && report.WindowEnd is { } we && we > ws)
+        {
+            var avg = TimeSpan.FromTicks((we - ws).Ticks / (report.SweepCount - 1));
+            var cadence = avg.TotalSeconds < 90 ? $"{avg.TotalSeconds:F0} s"
+                        : avg.TotalMinutes < 90 ? $"{avg.TotalMinutes:F0} min"
+                        : $"{avg.TotalHours:F1} h";
+            text += $", avg one per {cadence}";
+        }
+        return text;
     }
 
     private static string FormatWindow(FirewallReport report)

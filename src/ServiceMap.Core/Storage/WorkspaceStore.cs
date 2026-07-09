@@ -138,6 +138,27 @@ public sealed class WorkspaceStore
     public long AddMachine(string name, string dbPath)
     {
         using var conn = Open();
+
+        // Idempotent: if this database is already registered, update its name and
+        // reuse the existing row instead of inserting a duplicate (re-scans reuse
+        // the same per-host db file).
+        using (var find = conn.CreateCommand())
+        {
+            find.CommandText = "SELECT id FROM machines WHERE db_path=$p LIMIT 1;";
+            find.Parameters.AddWithValue("$p", dbPath);
+            var existing = find.ExecuteScalar();
+            if (existing is not null && existing is not DBNull)
+            {
+                var id = Convert.ToInt64(existing);
+                using var upd = conn.CreateCommand();
+                upd.CommandText = "UPDATE machines SET name=$n WHERE id=$id;";
+                upd.Parameters.AddWithValue("$n", name);
+                upd.Parameters.AddWithValue("$id", id);
+                upd.ExecuteNonQuery();
+                return id;
+            }
+        }
+
         using var cmd = conn.CreateCommand();
         cmd.CommandText =
             "INSERT INTO machines(name,db_path,wave,added) VALUES($n,$p,'',$a); SELECT last_insert_rowid();";

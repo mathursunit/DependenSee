@@ -13,6 +13,9 @@ public sealed class WindowsPlatformProvider : IPlatformProvider
     public IServiceEnumerator ServiceEnumerator { get; } = new WindowsServiceEnumerator();
     public IConnectionSampler ConnectionSampler { get; } = new WindowsConnectionSampler();
 
+    /// <summary>ETW kernel-network capture for flows too short-lived for polling.</summary>
+    public IConnectionEventWatcher? CreateEventWatcher() => new EtwConnectionWatcher();
+
     public bool IsElevated
     {
         get

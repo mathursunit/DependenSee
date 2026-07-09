@@ -57,8 +57,9 @@ public sealed class MultiSourceDataAccess
     public IReadOnlyList<CrossDependency> DetectCrossDependencies(ConnectionQuery q)
     {
         var map = BuildIpToMachine();
-        var waveByMachine = _workspace.GetMachines()
-            .ToDictionary(m => m.Name, m => m.Wave, StringComparer.OrdinalIgnoreCase);
+        // Dedupe-safe: two machines can share a hostname, so last-wins instead of throwing.
+        var waveByMachine = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var m in _workspace.GetMachines()) waveByMachine[m.Name] = m.Wave;
         string Wave(string name) => waveByMachine.TryGetValue(name, out var w) ? w : string.Empty;
         var deps = new List<CrossDependency>();
         foreach (var f in QueryUniqueAll(q))

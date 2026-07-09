@@ -22,3 +22,12 @@ dist/
 *.msi
 *.wixpdb
 build/
+
+## Release script output
+scripts/git-release-log.txt
+
+## Real firewall policy exports - never publish
+assets/FW/
+
+## FUSE mount artifacts
+.fuse_hidden*

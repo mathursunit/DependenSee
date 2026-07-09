@@ -1,60 +1,136 @@
-# Carrier DependenSee — Service & Connection Mapper
+<div align="center">
+  <img src="assets/DependenSee.png" alt="Carrier DependenSee" width="96" />
+  <h1>Carrier DependenSee</h1>
+  <p><b>See what connects.</b> — Service &amp; connection mapping for on-prem → cloud migration.</p>
 
-A Windows desktop tool that maps the services running on a machine and
-continuously records inbound/outbound network connections over time, storing the
-history locally for later querying and export. A Linux port is on the roadmap and
-the codebase is already structured for it.
+  ![CI](https://github.com/mathursunit/DependenSee/actions/workflows/ci.yml/badge.svg)
+  ![Release](https://github.com/mathursunit/DependenSee/actions/workflows/release.yml/badge.svg)
+</div>
 
-## What it does
+---
 
-- **Registered services** — snapshots every Windows service (name, state, start
-  mode, owning PID, executable path, log-on account) via WMI.
-- **Listening endpoints** — every process with an open TCP/UDP listening socket.
-- **Active connections over time** — samples established TCP connections on a
-  timer, attributing each to its owning process and classifying it as inbound or
-  outbound, building a traffic history you can query and export.
+Carrier DependenSee maps a Windows machine so you can plan its move to AWS, Azure,
+or GCP with confidence. A background service records **which services run** and
+**every inbound/outbound connection over time**, attributing each to its owning
+Windows service — the raw material for the firewall rules you'll need on the other
+side. A cross-platform Avalonia GUI lets you explore that history, tag it, and
+export migration-ready reports. A Linux port is on the roadmap and the codebase is
+already structured for it.
+
+## Features
+
+- **Live dashboard** — registered services, listening endpoints, and active
+  connections, refreshing on a timer. Toggle to hide standard Windows services and
+  see only the third-party/application services that matter for a migration.
+- **ETW event capture** — in addition to polling, the collector subscribes to
+  kernel network events (when elevated) so connections that open and close
+  between sweeps — DNS lookups, quick API calls, SQL logins — still make it into
+  the history and the firewall report. Falls back to polling-only when ETW is
+  unavailable.
+- **Write-time flow aggregation** — every sweep is folded into a compact
+  `connection_flows` table (one row per distinct dependency, with first/last
+  seen and counts). Raw per-sweep rows are kept for a short drill-down window
+  (default 7 days) while flows carry the full retention window (default 30
+  days) at a tiny fraction of the size.
+- **Service-name attribution** — each connection is resolved to its owning Windows
+  service at collection time (e.g. `W3SVC` instead of a bare `svchost`), carried
+  through every grid, export, and report.
+- **History with rich filters** — search stored samples by process/service, remote
+  address, port, protocol, direction, IP family, scope, and time window. Includes
+  *does-not-contain* filters and toggles to hide ephemeral ports and same-subnet
+  traffic.
+- **Excel-style column filters** — a funnel on every History column opens a
+  searchable, checkable list of the distinct values present, filtering instantly
+  without re-querying.
+- **Unique-flow collapsing** — fold thousands of repeated samples into distinct
+  dependencies (with first/last seen and counts), ignoring ephemeral client ports.
+- **Firewall PDF report** — a printable, migration-ready document that turns
+  observed traffic into the inbound/outbound firewall rules the machine will need,
+  with optional reverse-DNS and /24 source summarization.
+- **Policy reconciliation** — load Palo Alto (Panorama) and Check Point CSV
+  exports (all matching files in the folder are merged) and classify every
+  observed flow as Covered, Gap, or Denied, protocol-aware, with the matching
+  rule and its zones shown. Reverse reconciliation lists allow rules that cover
+  the machine but were never exercised in the observation window — a tighten/
+  decommission list for cutover. Unresolvable rule references (FQDN objects)
+  are counted so Gaps caused by them are explainable.
+- **Annotations** — tag any process, port, or host with a friendly name, owner, and
+  criticality; these enrich the firewall PDF so it reads in business terms.
+- **Dependency map** — a native node graph of the machine and its peers, colored by
+  scope and direction, sized by traffic volume.
+- **Fleet view & wave planner** — import databases from multiple machines and plan
+  migration waves across them. Databases written by scheduled remote scans are
+  picked up automatically.
+- **Agentless remote scans that accumulate** — recurring (scheduled) WinRM/SSH
+  scans take several snapshots per session (configurable sweeps + delay),
+  harvest recently-closed flows from Linux kernel connection tracking
+  (conntrack), append into per-host databases with the same retention split as
+  the local collector, and record their sweep count so the firewall report can
+  state its collection coverage honestly.
+- **CSV / JSON export** — including a `source` (machine) column and resolved service
+  name, so data from several machines can be combined and traced.
+
+Everything runs locally; the only optional network activity is reverse-DNS lookups
+when generating a firewall PDF.
+
+## Quick start
+
+**Install from a release (recommended for end users)**
+
+1. Grab the latest `Carrier-DependenSee-*.msi` from the
+   [Releases](https://github.com/mathursunit/DependenSee/releases) page.
+2. Double-click it and approve the UAC prompt. It installs to
+   `C:\Program Files\Carrier DependenSee`, registers the collector service, and
+   starts recording immediately.
+3. Launch **Carrier DependenSee** from the Start Menu.
+
+The .NET runtime is bundled — nothing else to install. See the
+[User Guide](Carrier-DependenSee-User-Guide.html) for a full walkthrough.
 
 ## Architecture
 
-The design separates a background **collector** (writer) from a **GUI reader**,
-and isolates all OS-specific code behind interfaces so the Linux port is a
-drop-in.
+The design separates a background **collector** (writer) from a **GUI reader**, and
+isolates all OS-specific code behind interfaces so the Linux port is a drop-in.
 
 ```
 ServiceMap.sln
 ├─ src/
-│  ├─ ServiceMap.Core                  net8.0        Models, SQLite storage (WAL), export, retention
-│  ├─ ServiceMap.Platform.Abstractions net8.0        IServiceEnumerator, IConnectionSampler, IPlatformProvider
+│  ├─ ServiceMap.Core                  net8.0         Models, SQLite storage (WAL), export, retention, IP scope
+│  ├─ ServiceMap.Platform.Abstractions net8.0         IServiceEnumerator, IConnectionSampler, IPlatformProvider
 │  ├─ ServiceMap.Platform.Windows      net8.0-windows WMI + GetExtendedTcpTable/UdpTable P/Invoke
-│  ├─ ServiceMap.Platform.Linux        net8.0        /proc/net + systemctl (port in progress)
-│  ├─ ServiceMap.Engine                net8.0-windows Platform selection + collection orchestration
+│  ├─ ServiceMap.Platform.Linux        net8.0         /proc/net + systemctl (port in progress)
+│  ├─ ServiceMap.Engine                net8.0-windows Platform selection + collection orchestration (PID→service)
 │  ├─ ServiceMap.Collector             net8.0-windows Windows Service (BackgroundService) writer
-│  └─ ServiceMap.App                   net8.0        Avalonia reader GUI (cross-platform)
+│  ├─ ServiceMap.Reporting             net8.0         Firewall-rule PDF (PDFsharp/MigraDoc)
+│  └─ ServiceMap.App                   net8.0         Avalonia reader GUI (cross-platform)
 ├─ tools/
-│  └─ ServiceMap.LinuxProbe            net8.0        Headless validation of the Linux path
-└─ scripts/
-   ├─ install-service.ps1
-   └─ uninstall-service.ps1
+│  └─ ServiceMap.LinuxProbe            net8.0         Headless validation of the Linux path
+├─ tests/
+│  └─ ServiceMap.Tests                    net8.0         xunit tests (classifiers, parsers, matching, storage)
+├─ installer/                                         WiX v5 MSI definition + build script (output → dist/installer)
+└─ scripts/                                           Service install/uninstall, publish, push-to-github
 ```
+
+> Internal namespaces remain `ServiceMap.*`; the shipped product identity is
+> *Carrier DependenSee*.
 
 ### Why these choices
 
-- **Avalonia (not WPF)** for the GUI so the same code runs on Windows now and
-  Linux later.
+- **Avalonia (not WPF)** so the same GUI code runs on Windows now and Linux later.
 - **WMI** for services because, unlike `ServiceController`, it returns the PID,
-  path, start mode, and account in one query.
+  path, start mode, and account in one query — and lets us map PID → owning service.
 - **`GetExtendedTcpTable`/`GetExtendedUdpTable` P/Invoke** because the managed
-  `IPGlobalProperties` APIs do not expose the owning process id — the whole point
-  of attribution.
-- **SQLite with WAL journaling** so the collector can write while the GUI reads
-  the same file concurrently.
+  `IPGlobalProperties` APIs don't expose the owning process id — the point of
+  attribution.
+- **SQLite with WAL journaling** so the collector can write while the GUI reads the
+  same file concurrently. Schema changes are additive migrations (currently v3).
 
 ## Data storage
 
 - Default database: `C:\ProgramData\CarrierDependenSee\servicemap.db` (shared, machine-wide).
-- Retention: connection samples older than `RetentionDays` (default 30) are pruned.
-- Export: CSV and JSON, on demand from the History tab or on a schedule from the
-  collector (`AutoExportEnabled`).
+- Exports: `C:\ProgramData\CarrierDependenSee\exports`.
+- Retention: raw connection samples older than `RawRetentionDays` (default 7) are
+  pruned; aggregated flows are kept for `RetentionDays` (default 30).
 
 Collector settings live in `src/ServiceMap.Collector/appsettings.json`:
 
@@ -62,103 +138,79 @@ Collector settings live in `src/ServiceMap.Collector/appsettings.json`:
 |---|---|---|
 | `SamplingIntervalSeconds` | 5 | Connection sampling cadence |
 | `ServiceScanIntervalSeconds` | 60 | Service snapshot cadence |
-| `RetentionDays` | 30 | History window |
+| `RetentionDays` | 30 | Aggregated-flow history window |
+| `RawRetentionDays` | 7 | Raw per-sweep sample window (clamped to `RetentionDays`) |
+| `EventCaptureEnabled` | true | ETW capture of short-lived connections (needs elevation) |
 | `RetentionSweepMinutes` | 60 | How often pruning runs |
 | `AutoExportEnabled` | false | Periodic CSV export |
 
-## Build
+## Build from source
 
-Requires the **.NET 8 SDK** on the build machine only.
+Requires the **.NET 8 SDK**.
 
 ```powershell
 dotnet build ServiceMap.sln -c Release
 ```
 
-### Bundle the .NET runtime (no install needed on the target)
-
-`scripts\publish.ps1` produces **self-contained, single-file** executables with
-the .NET 8 runtime embedded, so the target machine needs no .NET installed:
+### Self-contained publish (no .NET on the target)
 
 ```powershell
 .\scripts\publish.ps1                 # win-x64 by default
 .\scripts\publish.ps1 -Runtime win-arm64
 ```
 
-Output lands in `dist\`:
+Output lands in `dist\` as single-file executables with the runtime embedded.
+Trimming is intentionally disabled because WMI and Avalonia use reflection.
 
-```
-dist\collector\CarrierDependenSee.Collector.exe   (~37 MB, runtime bundled)
-dist\app\CarrierDependenSee.App.exe               (~46 MB, runtime bundled)
-```
-
-Each exe is a single file — the CLR, BCL, and all dependencies are packed inside.
-Trimming is intentionally disabled because WMI and Avalonia use reflection, so the
-size reflects the full runtime. To strip the `.pdb` debug symbols from a release
-drop, add `-p:DebugType=none -p:DebugSymbols=false` to the publish commands.
-
-## Installer (MSI)
-
-For a one-click deployment, build a Windows Installer package. `installer\CarrierDependenSee.wxs`
-is a WiX v5 definition that:
-
-- installs the bundled collector and GUI under `Program Files\Carrier DependenSee`,
-- registers the collector as the `CarrierDependenSeeCollector` Windows Service (LocalSystem,
-  auto-start) and starts it during install,
-- adds a Start Menu shortcut for the GUI and an Add/Remove Programs entry,
-- stops and removes the service automatically on uninstall.
-
-Build it on Windows (the .NET 8 SDK is the only prerequisite):
+### Build the MSI
 
 ```powershell
-.\installer\build-installer.ps1
-# produces Carrier-DependenSee-1.1.0.0-x64.msi in the repo root
+.\installer\build-installer.ps1 -Version 1.3.0.0
+# produces dist\installer\Carrier-DependenSee-1.3.0.0-x64.msi
+```
+
+To Authenticode-sign the MSI (recommended for fleet deployment), pass the
+thumbprint of a code-signing certificate from your certificate store:
+
+```powershell
+.\installer\build-installer.ps1 -Version 1.3.0.0 -SignThumbprint <SHA1-thumbprint>
 ```
 
 The script installs the WiX v5 dotnet tool if needed, publishes both executables
-self-contained (runtime bundled), and compiles the `.msi`. Double-click the result
-to install — Windows prompts for elevation, the service starts on its own, and the
-viewer appears in the Start Menu.
+self-contained, and compiles the `.msi`. WiX compiles MSIs on Windows only.
 
-> Note: WiX compiles MSIs on Windows only, so the `.msi` is produced there rather
-> than as part of the cross-platform build.
+## Releasing (CI)
 
-## Install & run (Windows)
+Two GitHub Actions workflows are included:
 
-The collector needs administrator rights for full port-to-process attribution, so
-it installs as a Windows Service running under LocalSystem. The GUI runs as a
-normal user and reads the shared database.
+- **CI** (`.github/workflows/ci.yml`) — builds the whole solution on Windows and
+  runs the unit tests (`tests/ServiceMap.Tests`) for every push and pull request
+  to `main`.
+- **Release** (`.github/workflows/release.yml`) — on a version tag, builds the MSI
+  and attaches it to a GitHub Release.
 
-1. From an **elevated** PowerShell prompt:
+To cut a release:
 
-   ```powershell
-   .\scripts\install-service.ps1
-   ```
+```powershell
+git tag v1.3.0
+git push origin v1.3.0
+```
 
-   This registers `CarrierDependenSeeCollector`, sets it to auto-start, and starts it.
-
-2. Launch the GUI (`CarrierDependenSee.App.exe`). The **Dashboard** shows current services,
-   listeners, and active connections, refreshing on a timer. **History** lets you
-   filter stored samples by process, port, remote address, protocol, direction,
-   and time window, and export the results. **Settings** lets you install / start /
-   stop / uninstall the service (each prompts for UAC elevation) and change the
-   database path and refresh interval.
-
-3. To remove the service (elevated):
-
-   ```powershell
-   .\scripts\uninstall-service.ps1
-   ```
-
-You can also run the collector as a console app for debugging — just run
-`CarrierDependenSee.Collector.exe` directly; it detects it is not under the SCM and logs
-to the console.
+The workflow stamps the MSI version from the tag, uploads it as a build artifact,
+and publishes a Release with auto-generated notes.
 
 ## Direction inference
 
-A TCP connection is classified as **inbound** when its local port is one the host
-is also listening on in the same sweep, and **outbound** otherwise. Listening
-sockets are recorded as **Listen**. UDP is connectionless, so only its listening
-endpoints are captured.
+A TCP connection is classified **inbound** when its local port is one the host
+has recently been listening on, and **outbound** otherwise. The sampler keeps a
+sliding window of listen ports across sweeps (15-minute TTL), so a listener
+that restarts — or races the snapshot — doesn't flip its established
+connections to outbound. Listening sockets are recorded as **Listen**. For
+ETW-captured events no inference is needed: a Connect event is outbound and an
+Accept event is inbound by definition. Polled UDP shows listening endpoints
+only; ETW additionally captures outbound UDP sends (e.g. DNS). Remote addresses
+are classified by **scope** (private / internet / loopback / link-local) to
+isolate internet-facing traffic quickly.
 
 ## Linux roadmap
 
@@ -175,6 +227,12 @@ Remaining work to reach parity:
 ## Notes & limitations
 
 - Full attribution and complete service details require running the collector
-  elevated (LocalSystem or an admin account).
-- ETW-based per-flow byte counts and a node-graph topology view are planned for a
-  future version; v1 presents the data as tables.
+  elevated (LocalSystem or an admin account); a few protected system sockets may
+  still show as `unknown`.
+- The firewall report reflects only traffic observed in the collection window — run
+  the collector across a representative period (including nightly and month-end
+  peaks) before finalizing rules.
+
+---
+
+<div align="center"><sub>Internal tool for Carrier Corporation's cloud migration · built by Sunit Mathur</sub></div>

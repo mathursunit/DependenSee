@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Tests target the portable (net8.0) projects so they run on any CI OS.
+         Platform.Windows code paths (WMI, iphlpapi, ETW) need a live Windows
+         host and are exercised via the shared logic they delegate to
+         (DirectionClassifier, NoiseFilter, IpClassifier). -->
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
+    <PackageReference Include="xunit" Version="2.8.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ServiceMap.Core\ServiceMap.Core.csproj" />
+    <ProjectReference Include="..\..\src\ServiceMap.Firewall\ServiceMap.Firewall.csproj" />
+    <ProjectReference Include="..\..\src\ServiceMap.Remote\ServiceMap.Remote.csproj" />
+  </ItemGroup>
+
+</Project>

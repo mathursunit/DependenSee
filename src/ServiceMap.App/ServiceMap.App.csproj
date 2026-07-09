@@ -30,6 +30,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ServiceMap.Core\ServiceMap.Core.csproj" />
+    <ProjectReference Include="..\ServiceMap.Remote\ServiceMap.Remote.csproj" />
+    <ProjectReference Include="..\ServiceMap.Firewall\ServiceMap.Firewall.csproj" />
     <ProjectReference Include="..\ServiceMap.Reporting\ServiceMap.Reporting.csproj" />
   </ItemGroup>
 

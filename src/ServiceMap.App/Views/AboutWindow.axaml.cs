@@ -25,5 +25,27 @@ public partial class AboutWindow : Window
         catch { /* logo optional */ }
     }
 
+    private async void OnCheckForUpdates(object? sender, RoutedEventArgs e)
+    {
+        UpdateButton.IsEnabled = false;
+        UpdateStatusText.IsVisible = true;
+        UpdateStatusText.Text = "Checking…";
+        try
+        {
+            var result = await UpdateChecker.CheckAsync();
+            UpdateStatusText.Text = result.UpdateAvailable
+                ? result.Message + $" Download from {UpdateChecker.ReleasesPage}"
+                : result.Message;
+        }
+        catch (Exception ex)
+        {
+            UpdateStatusText.Text = "Could not check for updates: " + ex.Message;
+        }
+        finally
+        {
+            UpdateButton.IsEnabled = true;
+        }
+    }
+
     private void OnClose(object? sender, RoutedEventArgs e) => Close();
 }

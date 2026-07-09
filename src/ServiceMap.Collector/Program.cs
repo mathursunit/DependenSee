@@ -28,7 +28,9 @@ builder.Services.AddSingleton(sp =>
 builder.Services.AddSingleton(sp =>
 {
     var repo = sp.GetRequiredService<SampleRepository>();
-    return new CollectionEngine(PlatformFactory.Create(), repo);
+    var opts = sp.GetRequiredService<IOptions<CollectorOptions>>().Value;
+    return new CollectionEngine(PlatformFactory.Create(), repo,
+        opts.FilterDiscoveryNoise, opts.EventCaptureEnabled);
 });
 
 builder.Services.AddHostedService<CollectorWorker>();

@@ -18,12 +18,24 @@
             </MenuItem>
         </Menu>
         <Border DockPanel.Dock="Top" Background="#1F2937" Padding="16,10">
-            <StackPanel Orientation="Horizontal" Spacing="12">
-                <TextBlock Text="Carrier DependenSee" FontSize="18" FontWeight="Bold"
-                           Foreground="White" VerticalAlignment="Center" />
-                <TextBlock Text="See what connects." FontSize="13"
-                           Foreground="#9CA3AF" VerticalAlignment="Center" />
-            </StackPanel>
+            <DockPanel LastChildFill="False">
+                <StackPanel Orientation="Horizontal" Spacing="12" DockPanel.Dock="Left">
+                    <TextBlock Text="Carrier DependenSee" FontSize="18" FontWeight="Bold"
+                               Foreground="White" VerticalAlignment="Center" />
+                    <TextBlock Text="See what connects." FontSize="13"
+                               Foreground="#9CA3AF" VerticalAlignment="Center" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8" DockPanel.Dock="Right" VerticalAlignment="Center">
+                    <TextBlock Text="Machine:" Foreground="#9CA3AF" VerticalAlignment="Center" />
+                    <ComboBox MinWidth="230" ItemsSource="{Binding MachineOptions}"
+                              SelectedItem="{Binding SelectedMachineOption}" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+        <Border DockPanel.Dock="Top" Background="#FEF3C7" BorderBrush="#F59E0B" BorderThickness="0,0,0,1"
+                Padding="16,6" IsVisible="{Binding IsRemoteActive}">
+            <TextBlock Text="{Binding ActiveMachineBanner}" Foreground="#92400E"
+                       VerticalAlignment="Center" TextWrapping="Wrap" />
         </Border>
 
         <TabControl Margin="8">
@@ -132,6 +144,18 @@
                                     <TextBox Width="80" Text="{Binding History.LocalPortFilter}" />
                                 </StackPanel>
                                 <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="Local port excludes" FontSize="11" Foreground="#6B7280" />
+                                    <TextBox Width="80" Text="{Binding History.LocalPortNotFilter}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="Local contains" FontSize="11" Foreground="#6B7280" />
+                                    <TextBox Width="140" Text="{Binding History.LocalAddressFilter}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="Local excludes" FontSize="11" Foreground="#6B7280" />
+                                    <TextBox Width="140" Text="{Binding History.LocalNotContains}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,12,0">
                                     <TextBlock Text="Protocol" FontSize="11" Foreground="#6B7280" />
                                     <ComboBox Width="85" ItemsSource="{Binding History.ProtocolOptions}"
                                               SelectedItem="{Binding History.SelectedProtocol}" />
@@ -185,7 +209,7 @@
                               GridLinesVisibility="Horizontal" CanUserSortColumns="True">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Timestamp (local)"
-                                Binding="{Binding Timestamp, Converter={x:Static vm:LocalTimeConverter.Instance}}" Width="Auto" />
+                                Binding="{Binding TimestampLocal}" Width="Auto" />
                             <DataGridTextColumn Binding="{Binding Protocol}" Width="Auto">
                                 <DataGridTextColumn.Header>
                                     <ctrl:FilterHeader DataContext="{Binding History.ProtocolCol}" />
@@ -241,9 +265,9 @@
                               GridLinesVisibility="Horizontal" CanUserSortColumns="True">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="First seen"
-                                Binding="{Binding FirstSeen, Converter={x:Static vm:LocalTimeConverter.Instance}}" Width="Auto" />
+                                Binding="{Binding FirstSeenLocal}" Width="Auto" />
                             <DataGridTextColumn Header="Last seen"
-                                Binding="{Binding LastSeen, Converter={x:Static vm:LocalTimeConverter.Instance}}" Width="Auto" />
+                                Binding="{Binding LastSeenLocal}" Width="Auto" />
                             <DataGridTextColumn Header="Count" Binding="{Binding SampleCount}" Width="Auto" />
                             <DataGridTextColumn Binding="{Binding Protocol}" Width="Auto">
                                 <DataGridTextColumn.Header>
@@ -373,6 +397,196 @@
                 </DockPanel>
             </TabItem>
 
+            <!-- REMOTE -->
+            <TabItem Header="Remote">
+                <DockPanel>
+                    <Border DockPanel.Dock="Top" Background="#F3F4F6" Padding="12,8" Margin="0,0,0,8" CornerRadius="4">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Agentless remote collection — gather services and connections from other servers without installing anything on them. Windows uses WinRM/PowerShell Remoting; Linux uses SSH."
+                                       Foreground="#374151" TextWrapping="Wrap" />
+                            <WrapPanel>
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="Hosts / range / CIDR" FontSize="11" Foreground="#6B7280" />
+                                    <TextBox Width="320" Height="52" AcceptsReturn="True" TextWrapping="Wrap"
+                                             Watermark="10.0.0.10, 10.0.0.20-40, 10.1.0.0/24, server01"
+                                             Text="{Binding Remote.Targets}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="OS / transport" FontSize="11" Foreground="#6B7280" />
+                                    <ComboBox Width="150" ItemsSource="{Binding Remote.OsOptions}"
+                                              SelectedItem="{Binding Remote.SelectedOs}" />
+                                    <TextBlock Text="Port (optional)" FontSize="11" Foreground="#6B7280" Margin="0,8,0,0" />
+                                    <TextBox Width="150" Text="{Binding Remote.PortText}" Watermark="22 / 5985" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="Username" FontSize="11" Foreground="#6B7280" />
+                                    <TextBox Width="180" Text="{Binding Remote.Username}" Watermark="DOMAIN\user or root" />
+                                    <TextBlock Text="Password" FontSize="11" Foreground="#6B7280" Margin="0,8,0,0" />
+                                    <TextBox Width="180" Text="{Binding Remote.Password}" PasswordChar="*" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="SSH private key (optional)" FontSize="11" Foreground="#6B7280" />
+                                    <TextBox Width="220" Text="{Binding Remote.PrivateKeyPath}" Watermark="C:\keys\id_rsa" />
+                                    <TextBlock Text="Max parallel" FontSize="11" Foreground="#6B7280" Margin="0,8,0,0" />
+                                    <NumericUpDown Width="120" Minimum="1" Maximum="64" Value="{Binding Remote.MaxParallel}" />
+                                </StackPanel>
+                                <StackPanel Margin="0,0,12,0">
+                                    <TextBlock Text="Sweeps per scan" FontSize="11" Foreground="#6B7280" />
+                                    <NumericUpDown Width="120" Minimum="1" Maximum="10" Value="{Binding Remote.SweepsPerScan}" />
+                                    <TextBlock Text="Sweep delay (s)" FontSize="11" Foreground="#6B7280" Margin="0,8,0,0" />
+                                    <NumericUpDown Width="120" Minimum="1" Maximum="60" Value="{Binding Remote.SweepDelaySeconds}" />
+                                </StackPanel>
+                            </WrapPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="Scan" Command="{Binding Remote.ScanCommand}"
+                                        Background="#1F2937" Foreground="White"
+                                        IsEnabled="{Binding !Remote.IsScanning}" />
+                                <Button Content="Cancel" Command="{Binding Remote.CancelCommand}"
+                                        IsEnabled="{Binding Remote.IsScanning}" />
+                                <TextBlock Text="{Binding Remote.Status}" VerticalAlignment="Center" Foreground="#374151" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <TextBlock FontSize="11" Foreground="#6B7280" TextWrapping="Wrap"
+                                       Text="Credentials are used only for this scan and are not saved. Scan only systems you are authorized to access. WinRM must be enabled on Windows targets (Enable-PSRemoting; for workgroup hosts add them to TrustedHosts); SSH must be reachable on Linux targets." />
+                            <Border BorderBrush="#E5E7EB" BorderThickness="0,1,0,0" Padding="0,8,0,0" Margin="0,4,0,0">
+                                <StackPanel Spacing="6">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBlock Text="Continuous: save as" VerticalAlignment="Center" FontSize="11" Foreground="#6B7280" />
+                                        <TextBox Width="150" Text="{Binding Remote.ProfileName}" />
+                                        <TextBlock Text="and run every" VerticalAlignment="Center" FontSize="11" Foreground="#6B7280" />
+                                        <NumericUpDown Width="120" Minimum="1" Maximum="1440" Value="{Binding Remote.ScheduleMinutes}" />
+                                        <TextBlock Text="min" VerticalAlignment="Center" FontSize="11" Foreground="#6B7280" />
+                                        <Button Content="Schedule" Command="{Binding Remote.ScheduleCommand}" />
+                                        <Button Content="Unschedule" Command="{Binding Remote.UnscheduleCommand}" />
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding Remote.ScheduleStatus}" FontSize="11" Foreground="#374151" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                    <Border BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="4">
+                        <ListBox ItemsSource="{Binding Remote.Log}" FontFamily="Consolas,monospace" FontSize="12" />
+                    </Border>
+                </DockPanel>
+            </TabItem>
+
+            <!-- FLEET -->
+            <TabItem Header="Fleet">
+                <DockPanel>
+                    <Border DockPanel.Dock="Top" Background="#F3F4F6" Padding="12,8" Margin="0,0,0,8" CornerRadius="4">
+                        <StackPanel Spacing="8">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="Import database…" Command="{Binding Fleet.ImportMachineCommand}" />
+                                <Button Content="Sync remote scans" Command="{Binding Fleet.SyncRemoteScansCommand}" />
+                                <Button Content="Remove selected" Command="{Binding Fleet.RemoveMachineCommand}" />
+                                <Button Content="View this server" Command="{Binding Fleet.ViewServerCommand}"
+                                        Background="#1F2937" Foreground="White" />
+                                <TextBlock Text="Hours back" FontSize="11" Foreground="#6B7280" VerticalAlignment="Center" Margin="8,0,0,0" />
+                                <NumericUpDown Width="120" Minimum="1" Maximum="8760" Value="{Binding Fleet.HoursBack}" />
+                                <Button Content="Refresh" Command="{Binding Fleet.RefreshCommand}" Background="#1F2937" Foreground="White" />
+                                <TextBlock Text="Wave" FontSize="11" Foreground="#6B7280" VerticalAlignment="Center" Margin="8,0,0,0" />
+                                <TextBox Width="120" Text="{Binding Fleet.WaveInput}" />
+                                <Button Content="Assign wave" Command="{Binding Fleet.AssignWaveCommand}" />
+                                <Button Content="Export server PDF" Command="{Binding Fleet.ExportServerPdfCommand}"
+                                        Background="#1F2937" Foreground="White" Margin="16,0,0,0" />
+                            </StackPanel>
+                            <TextBlock Text="{Binding Fleet.Status}" Foreground="#374151" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                    <Grid ColumnDefinitions="*,2*" RowDefinitions="Auto,*,Auto,*">
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Machines" FontWeight="SemiBold" Margin="2,0,0,4" />
+                        <DataGrid Grid.Row="1" Grid.Column="0" Grid.RowSpan="3" Margin="0,0,6,0" x:CompileBindings="False"
+                                  ItemsSource="{Binding Fleet.Machines}" SelectedItem="{Binding Fleet.SelectedMachine}"
+                                  IsReadOnly="True" CanUserResizeColumns="True" GridLinesVisibility="Horizontal" CanUserSortColumns="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Machine" Binding="{Binding Name}" Width="*" />
+                                <DataGridTextColumn Header="Wave" Binding="{Binding Wave}" Width="Auto" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="Unique flows (all machines)" FontWeight="SemiBold" Margin="2,0,0,4" />
+                        <DataGrid Grid.Row="1" Grid.Column="1" x:CompileBindings="False"
+                                  ItemsSource="{Binding Fleet.Flows}" IsReadOnly="True" CanUserResizeColumns="True"
+                                  GridLinesVisibility="Horizontal" CanUserSortColumns="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Machine" Binding="{Binding Machine}" Width="Auto" />
+                                <DataGridTextColumn Header="Direction" Binding="{Binding Direction}" Width="Auto" />
+                                <DataGridTextColumn Header="Scope" Binding="{Binding RemoteScope}" Width="Auto" />
+                                <DataGridTextColumn Header="Service" Binding="{Binding ServiceOrProcess}" Width="*" />
+                                <DataGridTextColumn Header="Remote address" Binding="{Binding RemoteAddress}" Width="150" />
+                                <DataGridTextColumn Header="R.Port" Binding="{Binding RemotePort}" Width="75" />
+                                <DataGridTextColumn Header="Count" Binding="{Binding SampleCount}" Width="Auto" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="Machine-to-machine dependencies" FontWeight="SemiBold" Margin="2,6,0,4" />
+                        <DataGrid Grid.Row="3" Grid.Column="1" x:CompileBindings="False"
+                                  ItemsSource="{Binding Fleet.CrossDependencies}" IsReadOnly="True" CanUserResizeColumns="True"
+                                  GridLinesVisibility="Horizontal" CanUserSortColumns="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="From" Binding="{Binding FromMachine}" Width="*" />
+                                <DataGridTextColumn Header="To" Binding="{Binding ToMachine}" Width="*" />
+                                <DataGridTextColumn Header="Process" Binding="{Binding Process}" Width="*" />
+                                <DataGridTextColumn Header="R.Port" Binding="{Binding RemotePort}" Width="75" />
+                                <DataGridTextColumn Header="From wave" Binding="{Binding FromWave}" Width="Auto" />
+                                <DataGridTextColumn Header="To wave" Binding="{Binding ToWave}" Width="Auto" />
+                                <DataGridTextColumn Header="Count" Binding="{Binding SampleCount}" Width="Auto" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </DockPanel>
+            </TabItem>
+
+            <!-- FIREWALL -->
+            <TabItem Header="Firewall">
+                <DockPanel>
+                    <Border DockPanel.Dock="Top" Background="#F3F4F6" Padding="12,8" Margin="0,0,0,8" CornerRadius="4">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Reconcile observed connections against your firewall policy exports — resolve each remote IP to its firewall object/group, and classify every flow as Covered, Gap (no rule), or Denied. Find unused rules lists allow rules covering this machine that no observed flow exercised."
+                                       Foreground="#374151" TextWrapping="Wrap" />
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="Policy folder" FontSize="11" Foreground="#6B7280" VerticalAlignment="Center" />
+                                <TextBox Width="420" Text="{Binding Firewall.PolicyFolder}"
+                                         Watermark="D:\Projects2026\CarrierMigrationMappingTool\assets\FW" />
+                                <Button Content="Load policy" Command="{Binding Firewall.LoadPolicyCommand}" />
+                                <TextBlock Text="{Binding Firewall.PolicyStatus}" VerticalAlignment="Center" Foreground="#374151" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="Server" FontSize="11" Foreground="#6B7280" VerticalAlignment="Center" />
+                                <ComboBox MinWidth="220" ItemsSource="{Binding Firewall.MachineOptions}"
+                                          SelectedItem="{Binding Firewall.SelectedMachine}" />
+                                <TextBlock Text="Hours back" FontSize="11" Foreground="#6B7280" VerticalAlignment="Center" Margin="8,0,0,0" />
+                                <NumericUpDown Width="120" Minimum="1" Maximum="8760" Value="{Binding Firewall.HoursBack}" />
+                                <Button Content="Reconcile" Command="{Binding Firewall.ReconcileCommand}"
+                                        Background="#1F2937" Foreground="White" />
+                                <Button Content="Find unused rules" Command="{Binding Firewall.FindUnusedRulesCommand}" />
+                                <TextBlock Text="Show" FontSize="11" Foreground="#6B7280" VerticalAlignment="Center" Margin="8,0,0,0" />
+                                <ComboBox Width="110" ItemsSource="{Binding Firewall.CoverageOptions}"
+                                          SelectedItem="{Binding Firewall.SelectedCoverage}" />
+                                <Button Content="Export CSV" Command="{Binding Firewall.ExportCsvCommand}" />
+                            </StackPanel>
+                            <TextBlock Text="{Binding Firewall.ReconStatus}" Foreground="#374151" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                    <DataGrid x:CompileBindings="False" ItemsSource="{Binding Firewall.Results}" IsReadOnly="True"
+                              CanUserResizeColumns="True" GridLinesVisibility="Horizontal" CanUserSortColumns="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Coverage" Binding="{Binding Coverage}" Width="Auto" />
+                            <DataGridTextColumn Header="Direction" Binding="{Binding Direction}" Width="Auto" />
+                            <DataGridTextColumn Header="Remote address" Binding="{Binding RemoteAddress}" Width="150" />
+                            <DataGridTextColumn Header="Firewall object" Binding="{Binding RemoteObject}" Width="*" />
+                            <DataGridTextColumn Header="Groups" Binding="{Binding Groups}" Width="*" />
+                            <DataGridTextColumn Header="Port" Binding="{Binding Port}" Width="Auto" />
+                            <DataGridTextColumn Header="Proto" Binding="{Binding Protocol}" Width="Auto" />
+                            <DataGridTextColumn Header="Service" Binding="{Binding Service}" Width="140" />
+                            <DataGridTextColumn Header="Matching rule" Binding="{Binding Rule}" Width="*" />
+                            <DataGridTextColumn Header="Policy" Binding="{Binding Policy}" Width="120" />
+                            <DataGridTextColumn Header="Zones" Binding="{Binding Zones}" Width="Auto" />
+                            <DataGridTextColumn Header="Count" Binding="{Binding Count}" Width="Auto" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </TabItem>
+
             <!-- SETTINGS -->
             <TabItem Header="Settings">
                 <ScrollViewer>
@@ -385,7 +599,7 @@
                                     <TextBlock Text="{Binding Settings.ServiceStatus}" VerticalAlignment="Center" />
                                     <Button Content="Refresh" Command="{Binding Settings.RefreshServiceStatusCommand}" />
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal" Spacing="8" IsEnabled="{Binding Settings.ServiceControlSupported}">
+                                <StackPanel Orientation="Horizontal" Spacing="8" IsEnabled="{Binding IsLocalActive}">
                                     <Button Content="Install" Command="{Binding Settings.InstallServiceCommand}" />
                                     <Button Content="Start" Command="{Binding Settings.StartServiceCommand}" />
                                     <Button Content="Stop" Command="{Binding Settings.StopServiceCommand}" />

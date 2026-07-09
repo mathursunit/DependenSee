@@ -54,6 +54,10 @@ public sealed class DataAccess
             return (IReadOnlyCollection<string>)set;
         }, Array.Empty<string>());
 
+    /// <summary>The machine's own IP addresses (as recorded in local_address).</summary>
+    public IReadOnlyList<string> GetLocalAddresses() =>
+        WithRepo(r => r.GetLocalAddresses(), (IReadOnlyList<string>)Array.Empty<string>());
+
     public RepositoryStats GetStats() =>
         WithRepo(r => r.GetStats(), new RepositoryStats());
 

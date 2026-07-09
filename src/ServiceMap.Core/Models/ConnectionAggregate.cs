@@ -21,10 +21,23 @@ public sealed class ConnectionAggregate
     public string ServiceName { get; set; } = string.Empty;
     public string Machine { get; set; } = string.Empty;
 
+    /// <summary>The machine's own address for this flow (kept for firewall reconciliation).</summary>
+    public string OwnerAddress { get; set; } = string.Empty;
+
     public string ServiceOrProcess => string.IsNullOrEmpty(ServiceName) ? ProcessName : ServiceName;
 
     public DateTime FirstSeen { get; set; }
     public DateTime LastSeen { get; set; }
+
+    /// <summary>Local-time display form of <see cref="FirstSeen"/> (see ConnectionSample.TimestampLocal).</summary>
+    public string FirstSeenLocal => FirstSeen == default
+        ? string.Empty
+        : FirstSeen.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss");
+
+    /// <summary>Local-time display form of <see cref="LastSeen"/>.</summary>
+    public string LastSeenLocal => LastSeen == default
+        ? string.Empty
+        : LastSeen.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss");
     public long SampleCount { get; set; }
 
     public string LocalEndpoint =>

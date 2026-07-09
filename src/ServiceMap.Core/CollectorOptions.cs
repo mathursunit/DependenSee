@@ -21,8 +21,25 @@ public sealed class CollectorOptions
     /// <summary>How often to snapshot the registered service list.</summary>
     public int ServiceScanIntervalSeconds { get; set; } = 60;
 
-    /// <summary>Connection samples older than this are pruned.</summary>
+    /// <summary>
+    /// Aggregated flows (connection_flows) older than this are pruned. Flows are
+    /// tiny (one row per distinct dependency), so this can be long.
+    /// </summary>
     public int RetentionDays { get; set; } = 30;
+
+    /// <summary>
+    /// Raw per-sweep samples older than this are pruned. Raw rows dominate
+    /// database size (one row per connection per sweep); the flow table keeps
+    /// the migration-relevant view far longer. Clamped to RetentionDays.
+    /// </summary>
+    public int RawRetentionDays { get; set; } = 7;
+
+    /// <summary>
+    /// Capture connection events via ETW (Windows) in addition to polling, so
+    /// short-lived flows between sweeps are recorded. Requires elevation;
+    /// silently falls back to polling only when unavailable.
+    /// </summary>
+    public bool EventCaptureEnabled { get; set; } = true;
 
     /// <summary>How often the retention prune runs.</summary>
     public int RetentionSweepMinutes { get; set; } = 60;
@@ -33,6 +50,9 @@ public sealed class CollectorOptions
 
     /// <summary>Enable periodic automatic export of the last day's samples.</summary>
     public bool AutoExportEnabled { get; set; } = false;
+
+    /// <summary>Drop high-volume UDP discovery/multicast chatter (SSDP, mDNS, etc.) before storing.</summary>
+    public bool FilterDiscoveryNoise { get; set; } = true;
 
     /// <summary>How often the automatic export runs, when enabled.</summary>
     public int AutoExportIntervalMinutes { get; set; } = 1440;

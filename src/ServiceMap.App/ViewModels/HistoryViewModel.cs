@@ -70,6 +70,9 @@ public sealed partial class HistoryViewModel : ViewModelBase
     public string[] ScopeOptions { get; } = { "Any", "Private", "Internet", "Loopback", "Link-local" };
     [ObservableProperty] private string _selectedScope = "Any";
 
+    [ObservableProperty] private string? _localAddressFilter;
+    [ObservableProperty] private string? _localNotContains;
+    [ObservableProperty] private string? _localPortNotFilter;
     [ObservableProperty] private string? _processNotContains;
     [ObservableProperty] private string? _remoteNotContains;
     [ObservableProperty] private bool _excludeEphemeral;
@@ -120,6 +123,9 @@ public sealed partial class HistoryViewModel : ViewModelBase
     partial void OnSelectedFamilyChanged(string value) => ScheduleQuery();
     partial void OnSelectedScopeChanged(string value) => ScheduleQuery();
     partial void OnLimitChanged(int value) => ScheduleQuery();
+    partial void OnLocalAddressFilterChanged(string? value) => ScheduleQuery();
+    partial void OnLocalNotContainsChanged(string? value) => ScheduleQuery();
+    partial void OnLocalPortNotFilterChanged(string? value) => ScheduleQuery();
     partial void OnProcessNotContainsChanged(string? value) => ScheduleQuery();
     partial void OnRemoteNotContainsChanged(string? value) => ScheduleQuery();
     partial void OnExcludeEphemeralChanged(bool value) => ScheduleQuery();
@@ -281,10 +287,13 @@ public sealed partial class HistoryViewModel : ViewModelBase
             RemoteAddress = string.IsNullOrWhiteSpace(RemoteAddressFilter) ? null : RemoteAddressFilter,
             ProcessNotContains = string.IsNullOrWhiteSpace(ProcessNotContains) ? null : ProcessNotContains,
             RemoteNotContains = string.IsNullOrWhiteSpace(RemoteNotContains) ? null : RemoteNotContains,
+            LocalAddress = string.IsNullOrWhiteSpace(LocalAddressFilter) ? null : LocalAddressFilter,
+            LocalNotContains = string.IsNullOrWhiteSpace(LocalNotContains) ? null : LocalNotContains,
             ExcludeEphemeral = ExcludeEphemeral,
             Limit = Limit <= 0 ? 5000 : Limit
         };
         if (int.TryParse(LocalPortFilter, out var port)) q.LocalPort = port;
+        if (int.TryParse(LocalPortNotFilter, out var portNot)) q.LocalPortNot = portNot;
 
         q.Protocol = SelectedProtocol switch { "Tcp" => Protocol.Tcp, "Udp" => Protocol.Udp, _ => null };
         q.Direction = SelectedDirection switch

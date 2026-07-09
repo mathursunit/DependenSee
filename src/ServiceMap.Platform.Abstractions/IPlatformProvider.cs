@@ -16,4 +16,11 @@ public interface IPlatformProvider
 
     IServiceEnumerator ServiceEnumerator { get; }
     IConnectionSampler ConnectionSampler { get; }
+
+    /// <summary>
+    /// Create an event-driven connection watcher for platforms that support one
+    /// (ETW on Windows), or null when only polling is available. Default: null,
+    /// so platform implementations without event capture need no change.
+    /// </summary>
+    IConnectionEventWatcher? CreateEventWatcher() => null;
 }

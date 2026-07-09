@@ -1,35 +1,58 @@
+using System.Linq;
+using ServiceMap.Core.Net;
 using ServiceMap.Core.Storage;
 using ServiceMap.Platform.Abstractions;
 
 namespace ServiceMap.Engine;
 
 /// <summary>
-/// Stateless orchestration of a single collection unit of work: sample sockets
-/// and/or snapshot services, then persist. Timing is owned by the caller (the
-/// collector service worker), keeping this class easy to test.
+/// Orchestration of a single collection unit of work: sample sockets and/or
+/// snapshot services, merge in event-captured flows, then persist. Timing is
+/// owned by the caller (the collector service worker).
 /// </summary>
-public sealed class CollectionEngine
+public sealed class CollectionEngine : IDisposable
 {
     private readonly IPlatformProvider _platform;
     private readonly SampleRepository _repository;
+    private readonly bool _filterNoise;
+    private readonly IConnectionEventWatcher? _eventWatcher;
 
     // Most recent PID -> owning service(s) map, refreshed on each service scan.
     private volatile IReadOnlyDictionary<int, string> _pidToService =
         new Dictionary<int, string>();
 
-    public CollectionEngine(IPlatformProvider platform, SampleRepository repository)
+    public CollectionEngine(IPlatformProvider platform, SampleRepository repository,
+                            bool filterNoise = true, bool enableEventCapture = false)
     {
         _platform = platform;
         _repository = repository;
+        _filterNoise = filterNoise;
+        if (enableEventCapture)
+        {
+            _eventWatcher = platform.CreateEventWatcher();
+            _eventWatcher?.Start();
+        }
     }
 
     public string PlatformName => _platform.PlatformName;
     public bool IsElevated => _platform.IsElevated;
 
-    /// <summary>Take one connection sweep, attribute each to its owning service, and persist.</summary>
+    /// <summary>True when event-driven (ETW) capture is active alongside polling.</summary>
+    public bool EventCaptureActive => _eventWatcher?.IsRunning == true;
+
+    /// <summary>Why event capture is not active, when it was requested but failed.</summary>
+    public string? EventCaptureError => _eventWatcher?.LastError;
+
+    /// <summary>
+    /// Take one connection sweep, merge in flows captured by the event watcher
+    /// since the last sweep, attribute each to its owning service, drop noise,
+    /// and persist.
+    /// </summary>
     public int SampleConnectionsOnce()
     {
-        var samples = _platform.ConnectionSampler.Sample();
+        IReadOnlyList<Core.Models.ConnectionSample> sweep = _platform.ConnectionSampler.Sample();
+        var samples = MergeEventFlows(sweep);
+
         var map = _pidToService;
         if (map.Count > 0)
         {
@@ -39,9 +62,43 @@ public sealed class CollectionEngine
                     s.ServiceName = svc;
             }
         }
-        _repository.InsertConnectionSamples(samples);
-        return samples.Count;
+
+        // Drop high-volume discovery/multicast chatter before it hits the DB.
+        var toStore = _filterNoise
+            ? samples.Where(s => !NoiseFilter.IsNoise(s)).ToList()
+            : samples;
+
+        _repository.InsertConnectionSamples(toStore, sweepCount: 1);
+        return toStore.Count;
     }
+
+    /// <summary>
+    /// Append event-captured flows that the polling sweep did not already see
+    /// (a flow alive at sweep time appears in both; the sweep row wins so
+    /// state/direction stay consistent with historical behavior).
+    /// </summary>
+    private List<Core.Models.ConnectionSample> MergeEventFlows(
+        IReadOnlyList<Core.Models.ConnectionSample> sweep)
+    {
+        var merged = new List<Core.Models.ConnectionSample>(sweep);
+        if (_eventWatcher is not { IsRunning: true }) return merged;
+
+        var seen = new HashSet<(Core.Models.Protocol, Core.Models.ConnectionDirection, int, string, int, string, int)>();
+        foreach (var s in sweep)
+            seen.Add((s.Protocol, s.Direction, s.ProcessId,
+                      s.LocalAddress, s.LocalPort, s.RemoteAddress, s.RemotePort));
+
+        foreach (var e in _eventWatcher.Drain())
+        {
+            if (seen.Contains((e.Protocol, e.Direction, e.ProcessId,
+                               e.LocalAddress, e.LocalPort, e.RemoteAddress, e.RemotePort)))
+                continue;
+            merged.Add(e);
+        }
+        return merged;
+    }
+
+    public void Dispose() => _eventWatcher?.Dispose();
 
     /// <summary>Snapshot the registered services, refresh the PID map, and persist.</summary>
     public int ScanServicesOnce()
