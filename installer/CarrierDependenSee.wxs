@@ -30,9 +30,18 @@
       <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
     <?endif?>
 
-    <Feature Id="Main" Title="Carrier DependenSee" Level="1" Display="expand"
-             Description="Collector service and desktop viewer.">
+    <!--
+      Two selectable features. Default (double-click Next-Next-Finish) installs
+      both. Fleet push / temp machines can choose:
+        msiexec /i ...msi ADDLOCAL=CollectorFeature      (collector only)
+        msiexec /i ...msi ADDLOCAL=ConsoleFeature        (viewer only, nothing recorded)
+    -->
+    <Feature Id="CollectorFeature" Title="Collector service" Level="1" Display="expand"
+             Description="Background Windows service that records this machine's services and connections. Choose this on servers being profiled for migration.">
       <ComponentGroupRef Id="CollectorComponents" />
+    </Feature>
+    <Feature Id="ConsoleFeature" Title="Console (viewer)" Level="1" Display="expand"
+             Description="Desktop app to explore data, run remote scans, reconcile firewall policy, and export dossiers. Choose this on analyst or temp machines.">
       <ComponentGroupRef Id="AppComponents" />
       <ComponentRef Id="AppStartMenuShortcut" />
     </Feature>
@@ -99,7 +108,7 @@
                      Type="integer" Value="1" KeyPath="yes" />
     </Component>
 
-    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+    <ui:WixUI Id="WixUI_FeatureTree" InstallDirectory="INSTALLFOLDER" />
     <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
 
   </Package>

@@ -24,6 +24,14 @@
                                Foreground="White" VerticalAlignment="Center" />
                     <TextBlock Text="See what connects." FontSize="13"
                                Foreground="#9CA3AF" VerticalAlignment="Center" />
+                    <Border CornerRadius="3" Padding="8,2" VerticalAlignment="Center"
+                            Background="#065F46" IsVisible="{Binding IsLocalActive}">
+                        <TextBlock Text="● LIVE — this machine" Foreground="#A7F3D0" FontSize="11" FontWeight="Bold" />
+                    </Border>
+                    <Border CornerRadius="3" Padding="8,2" VerticalAlignment="Center"
+                            Background="#92400E" IsVisible="{Binding IsRemoteActive}">
+                        <TextBlock Text="◆ SNAPSHOT — imported/remote" Foreground="#FDE68A" FontSize="11" FontWeight="Bold" />
+                    </Border>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Spacing="8" DockPanel.Dock="Right" VerticalAlignment="Center">
                     <TextBlock Text="Machine:" Foreground="#9CA3AF" VerticalAlignment="Center" />
@@ -32,16 +40,21 @@
                 </StackPanel>
             </DockPanel>
         </Border>
+        <Border DockPanel.Dock="Top" Background="#DBEAFE" BorderBrush="#3B82F6" BorderThickness="0,0,0,1"
+                Padding="16,6" IsVisible="{Binding !ThisMachineAvailable}">
+            <TextBlock Text="{Binding ModeBanner}" Foreground="#1E40AF"
+                       VerticalAlignment="Center" TextWrapping="Wrap" />
+        </Border>
         <Border DockPanel.Dock="Top" Background="#FEF3C7" BorderBrush="#F59E0B" BorderThickness="0,0,0,1"
                 Padding="16,6" IsVisible="{Binding IsRemoteActive}">
             <TextBlock Text="{Binding ActiveMachineBanner}" Foreground="#92400E"
                        VerticalAlignment="Center" TextWrapping="Wrap" />
         </Border>
 
-        <TabControl Margin="8">
+        <TabControl Margin="8" SelectedIndex="{Binding SelectedTabIndex}">
 
             <!-- DASHBOARD -->
-            <TabItem Header="Dashboard">
+            <TabItem Header="Dashboard" IsVisible="{Binding ThisMachineAvailable}">
                 <DockPanel>
                     <Border DockPanel.Dock="Top" Background="#F3F4F6"
                             Padding="12,8" Margin="0,0,0,8" CornerRadius="4">
@@ -118,7 +131,7 @@
             </TabItem>
 
             <!-- HISTORY -->
-            <TabItem Header="History">
+            <TabItem Header="History" IsVisible="{Binding ThisMachineAvailable}">
                 <DockPanel>
                     <Border DockPanel.Dock="Top" Background="#F3F4F6" Padding="12,8" Margin="0,0,0,8" CornerRadius="4">
                         <StackPanel Spacing="8">
@@ -389,7 +402,7 @@
             </TabItem>
 
             <!-- MAP -->
-            <TabItem Header="Map">
+            <TabItem Header="Map" IsVisible="{Binding ThisMachineAvailable}">
                 <DockPanel>
                     <Border DockPanel.Dock="Top" Background="#F3F4F6" Padding="12,8" Margin="0,0,0,8" CornerRadius="4">
                         <StackPanel Orientation="Horizontal" Spacing="8">

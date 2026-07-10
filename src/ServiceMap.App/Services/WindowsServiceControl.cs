@@ -15,6 +15,19 @@ public static class WindowsServiceControl
     public static bool IsSupported => OperatingSystem.IsWindows();
 
     /// <summary>Returns a status string such as "RUNNING", "STOPPED", or "Not installed".</summary>
+    /// <summary>True when the collector service is registered on this machine.</summary>
+    public static bool IsInstalled()
+    {
+        if (!IsSupported) return false;
+        try
+        {
+            var output = Capture("sc", $"query \"{ServiceName}\"");
+            return !output.Contains("does not exist", StringComparison.OrdinalIgnoreCase)
+                   && !output.Contains("1060");
+        }
+        catch { return false; }
+    }
+
     public static string QueryStatus()
     {
         if (!IsSupported) return "Windows only";

@@ -12,13 +12,37 @@ public sealed class WorkspaceStore
 {
     private readonly string _cs;
 
+    private readonly string _baseDir;
+
     public WorkspaceStore(string databasePath)
     {
         var dir = Path.GetDirectoryName(Path.GetFullPath(databasePath));
         if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+        _baseDir = dir ?? Directory.GetCurrentDirectory();
         _cs = new SqliteConnectionStringBuilder { DataSource = databasePath, Pooling = true }.ToString();
         Initialize();
     }
+
+    /// <summary>
+    /// Store machine database paths relative to the workspace folder when the
+    /// database lives under it, so the whole project folder (workspace.db +
+    /// remote\*.db) can be moved to a share or USB stick and still resolve.
+    /// Absolute paths outside the folder are stored as-is.
+    /// </summary>
+    private string ToStoredPath(string dbPath)
+    {
+        try
+        {
+            var full = Path.GetFullPath(dbPath);
+            var rel = Path.GetRelativePath(_baseDir, full);
+            // Only relativize when the db is inside the workspace folder tree.
+            return rel.StartsWith("..") || Path.IsPathRooted(rel) ? full : rel;
+        }
+        catch { return dbPath; }
+    }
+
+    private string ResolvePath(string stored) =>
+        Path.IsPathRooted(stored) ? stored : Path.GetFullPath(Path.Combine(_baseDir, stored));
 
     private SqliteConnection Open()
     {
@@ -142,10 +166,12 @@ public sealed class WorkspaceStore
         // Idempotent: if this database is already registered, update its name and
         // reuse the existing row instead of inserting a duplicate (re-scans reuse
         // the same per-host db file).
+        var stored = ToStoredPath(dbPath);
         using (var find = conn.CreateCommand())
         {
-            find.CommandText = "SELECT id FROM machines WHERE db_path=$p LIMIT 1;";
-            find.Parameters.AddWithValue("$p", dbPath);
+            find.CommandText = "SELECT id FROM machines WHERE db_path=$p OR db_path=$abs LIMIT 1;";
+            find.Parameters.AddWithValue("$p", stored);
+            find.Parameters.AddWithValue("$abs", Path.GetFullPath(dbPath));
             var existing = find.ExecuteScalar();
             if (existing is not null && existing is not DBNull)
             {
@@ -163,7 +189,7 @@ public sealed class WorkspaceStore
         cmd.CommandText =
             "INSERT INTO machines(name,db_path,wave,added) VALUES($n,$p,'',$a); SELECT last_insert_rowid();";
         cmd.Parameters.AddWithValue("$n", name);
-        cmd.Parameters.AddWithValue("$p", dbPath);
+        cmd.Parameters.AddWithValue("$p", stored);
         cmd.Parameters.AddWithValue("$a", Iso(DateTime.UtcNow));
         return (long)(cmd.ExecuteScalar() ?? 0L);
     }
@@ -199,7 +225,7 @@ public sealed class WorkspaceStore
             {
                 Id = r.GetInt64(0),
                 Name = r.GetString(1),
-                DatabasePath = r.GetString(2),
+                DatabasePath = ResolvePath(r.GetString(2)),
                 Wave = r.GetString(3),
                 Added = From(r.GetString(4))
             });

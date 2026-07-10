@@ -55,6 +55,15 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private double _exportProgress;
     [ObservableProperty] private string _exportStage = string.Empty;
 
+    /// <summary>
+    /// True when a local collector is present (its database exists or the service
+    /// is installed) and the user hasn't forced console mode. When false the app
+    /// is a pure viewer: the This-Machine tabs are hidden and it opens on Fleet.
+    /// </summary>
+    [ObservableProperty] private bool _thisMachineAvailable = true;
+    [ObservableProperty] private int _selectedTabIndex;
+    [ObservableProperty] private string _modeBanner = string.Empty;
+
     public MainWindowViewModel()
     {
         _settings = AppSettings.Load();
@@ -87,16 +96,28 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             folder => { _settings.FirewallPolicyFolder = folder; _settings.Save(); });
         Settings = new SettingsViewModel(_settings, OnSettingsChanged);
 
+        // Console mode: no local collector (or forced). Hide This-Machine tabs.
+        var localPresent = _data.DatabaseExists || WindowsServiceControl.IsInstalled();
+        ThisMachineAvailable = localPresent && !AppModes.ForceConsole;
+        if (!ThisMachineAvailable)
+        {
+            // Dashboard(0) History(1) Map(2) then Remote(3) Fleet(4)…; open on Fleet.
+            SelectedTabIndex = 4;
+            ModeBanner = AppModes.ForceConsole
+                ? "Console mode (--console): viewer only. Import databases or run a remote scan from Fleet."
+                : "Console mode: no local collector on this machine. Import databases or run a remote scan from Fleet.";
+        }
+
         RefreshMachineOptions();
 
         _timer = new DispatcherTimer
         {
             Interval = TimeSpan.FromSeconds(Math.Max(1, _settings.RefreshIntervalSeconds))
         };
-        _timer.Tick += (_, _) => Dashboard.Refresh();
-        _timer.Start();
+        _timer.Tick += (_, _) => { if (IsLocalActive) Dashboard.Refresh(); };
+        if (ThisMachineAvailable) _timer.Start();
         _ready = true;
-        Dashboard.Refresh();
+        if (ThisMachineAvailable) Dashboard.Refresh();
     }
 
     /// <summary>Rebuild the machine dropdown from the local entry plus every fleet machine.</summary>
@@ -104,11 +125,13 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     {
         var previous = SelectedMachineOption?.Name;
         MachineOptions.Clear();
-        MachineOptions.Add(new MachineOption("Local (this machine)", null));
+        if (ThisMachineAvailable)
+            MachineOptions.Add(new MachineOption("Local (this machine)", null));
         foreach (var m in _multi.GetMachines())
             MachineOptions.Add(new MachineOption(m.Name, m.DatabasePath));
 
-        var restore = MachineOptions.FirstOrDefault(o => o.Name == previous) ?? MachineOptions[0];
+        var restore = MachineOptions.FirstOrDefault(o => o.Name == previous)
+                      ?? MachineOptions.FirstOrDefault();
         SelectedMachineOption = restore;
     }
 

@@ -2,6 +2,13 @@ using Avalonia;
 
 namespace ServiceMap.App;
 
+/// <summary>Process-wide startup flags read by the GUI.</summary>
+internal static class AppModes
+{
+    /// <summary>--console: run as a viewer only, ignoring any local collector.</summary>
+    public static bool ForceConsole { get; set; }
+}
+
 internal static class Program
 {
     // Avalonia entry point. Keep initialization minimal here.
@@ -20,6 +27,7 @@ internal static class Program
             Environment.Exit(DossierCli.Run(args));
             return;
         }
+        AppModes.ForceConsole = args.Contains("--console", StringComparer.OrdinalIgnoreCase);
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 

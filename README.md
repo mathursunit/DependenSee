@@ -102,6 +102,30 @@ when generating a firewall PDF.
 
 ## Quick start
 
+**Install roles**
+
+The MSI offers two features — *Collector service* (records this machine) and
+*Console (viewer)*. A normal double-click installs both. For a temp/analyst
+machine that should record nothing, install the console only:
+
+```powershell
+msiexec /i Carrier-DependenSee-<ver>-x64.msi ADDLOCAL=ConsoleFeature
+```
+
+or, for a fleet push that only records:
+
+```powershell
+msiexec /i Carrier-DependenSee-<ver>-x64.msi ADDLOCAL=CollectorFeature
+```
+
+When no local collector is present (or you launch with `--console`), the app
+opens in **console mode**: the This-Machine tabs are hidden and it starts on
+Fleet for importing databases and running remote scans. The header shows a
+green **LIVE** badge when viewing the local machine and an amber **SNAPSHOT**
+badge when viewing an imported/remote database. A fleet workspace stores machine
+database paths relative to its folder, so the whole project folder can be moved
+to a share or USB stick and still resolve.
+
 **Install from a release (recommended for end users)**
 
 1. Grab the latest `Carrier-DependenSee-*.msi` from the

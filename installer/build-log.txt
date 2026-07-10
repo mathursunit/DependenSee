@@ -1,21 +1,21 @@
-=== Carrier DependenSee installer build (1.13.0.0) ===
-Timestamp: Fri 07/10/2026 13:33:05.57
+=== Carrier DependenSee installer build (1.14.0.0) ===
+Timestamp: Fri 07/10/2026 13:39:14.35
 
 --- locating dotnet SDK ---
 C:\Program Files\dotnet\dotnet.exe
 8.0.422
 
---- running build-installer.ps1 -Version 1.13.0.0 ---
+--- running build-installer.ps1 -Version 1.14.0.0 ---
 ==> Ensuring WiX v5 tool is installed
 ==> Generating branding icon (if logo present)
 Wrote D:\Projects2026\CarrierMigrationMappingTool\scripts\..\assets\DependenSee.ico
 ==> Publishing collector + GUI (self-contained win-x64)
   Determining projects to restore...
-  Restored D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.Core\ServiceMap.Core.csproj (in 370 ms).
-  Restored D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.Platform.Abstractions\ServiceMap.Platform.Abstractions.csproj (in 370 ms).
-  Restored D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.Engine\ServiceMap.Engine.csproj (in 990 ms).
-  Restored D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.Collector\ServiceMap.Collector.csproj (in 992 ms).
-  Restored D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.Platform.Windows\ServiceMap.Platform.Windows.csproj (in 990 ms).
+  Restored D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.Platform.Windows\ServiceMap.Platform.Windows.csproj (in 213 ms).
+  Restored D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.Core\ServiceMap.Core.csproj (in 213 ms).
+  Restored D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.Engine\ServiceMap.Engine.csproj (in 213 ms).
+  Restored D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.Platform.Abstractions\ServiceMap.Platform.Abstractions.csproj (in 213 ms).
+  Restored D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.Collector\ServiceMap.Collector.csproj (in 214 ms).
   ServiceMap.Core -> D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.Core\bin\Release\net8.0\ServiceMap.Core.dll
   ServiceMap.Platform.Abstractions -> D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.Platform.Abstractions\bin\Release\net8.0\ServiceMap.Platform.Abstractions.dll
   ServiceMap.Platform.Windows -> D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.Platform.Windows\bin\Release\net8.0-windows\ServiceMap.Platform.Windows.dll
@@ -23,23 +23,23 @@ Wrote D:\Projects2026\CarrierMigrationMappingTool\scripts\..\assets\DependenSee.
   ServiceMap.Collector -> D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.Collector\bin\Release\net8.0-windows\win-x64\CarrierDependenSee.Collector.dll
   ServiceMap.Collector -> D:\Projects2026\CarrierMigrationMappingTool\dist\collector\
   Determining projects to restore...
-  Restored D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.Firewall\ServiceMap.Firewall.csproj (in 226 ms).
-  Restored D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.Reporting\ServiceMap.Reporting.csproj (in 233 ms).
-  Restored D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.Remote\ServiceMap.Remote.csproj (in 232 ms).
-  Restored D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.App\ServiceMap.App.csproj (in 237 ms).
+  Restored D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.Firewall\ServiceMap.Firewall.csproj (in 227 ms).
+  Restored D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.Remote\ServiceMap.Remote.csproj (in 227 ms).
+  Restored D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.Reporting\ServiceMap.Reporting.csproj (in 228 ms).
+  Restored D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.App\ServiceMap.App.csproj (in 234 ms).
   1 of 5 projects are up-to-date for restore.
   ServiceMap.Core -> D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.Core\bin\Release\net8.0\ServiceMap.Core.dll
   ServiceMap.Firewall -> D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.Firewall\bin\Release\net8.0\ServiceMap.Firewall.dll
 D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.Remote\RemoteScanProfile.cs(36,24): warning CA1416: This call site is reachable on all platforms. 'CredentialProtector.Unprotect(string)' is only supported on: 'windows'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1416) [D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.Remote\ServiceMap.Remote.csproj]
   ServiceMap.Remote -> D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.Remote\bin\Release\net8.0\ServiceMap.Remote.dll
   ServiceMap.Reporting -> D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.Reporting\bin\Release\net8.0\ServiceMap.Reporting.dll
-D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.App\ViewModels\MainWindowViewModel.cs(82,13): warning CS8602: Dereference of a possibly null reference. [D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.App\ServiceMap.App.csproj]
+D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.App\ViewModels\MainWindowViewModel.cs(91,13): warning CS8602: Dereference of a possibly null reference. [D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.App\ServiceMap.App.csproj]
 D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.App\ViewModels\RemoteViewModel.cs(144,25): warning CA1416: This call site is reachable on all platforms. 'CredentialProtector.Protect(string)' is only supported on: 'windows'. (https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1416) [D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.App\ServiceMap.App.csproj]
   ServiceMap.App -> D:\Projects2026\CarrierMigrationMappingTool\src\ServiceMap.App\bin\Release\net8.0\win-x64\CarrierDependenSee.App.dll
   ServiceMap.App -> D:\Projects2026\CarrierMigrationMappingTool\dist\app\
 ==> Building MSI
 
-Built: D:\Projects2026\CarrierMigrationMappingTool\dist\installer\Carrier-DependenSee-1.13.0.0-x64.msi
+Built: D:\Projects2026\CarrierMigrationMappingTool\dist\installer\Carrier-DependenSee-1.14.0.0-x64.msi
 Double-click to install (elevation required). The collector service
 starts automatically; launch Carrier DependenSee from the Start Menu.
 === finished ===
