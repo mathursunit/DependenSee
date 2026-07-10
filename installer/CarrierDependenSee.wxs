@@ -108,7 +108,7 @@
                      Type="integer" Value="1" KeyPath="yes" />
     </Component>
 
-    <ui:WixUI Id="WixUI_FeatureTree" InstallDirectory="INSTALLFOLDER" />
+    <ui:WixUI Id="WixUI_Mondo" InstallDirectory="INSTALLFOLDER" />
     <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
 
   </Package>

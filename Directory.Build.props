@@ -4,7 +4,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <Version>1.14.0</Version>
+    <Version>1.15.0</Version>
     <!-- Allow net8.0-windows projects to compile (not run) on Linux/macOS dev
          machines and CI, e.g. for running the portable unit tests. -->
     <EnableWindowsTargeting>true</EnableWindowsTargeting>

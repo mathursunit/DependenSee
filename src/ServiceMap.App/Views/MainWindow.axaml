@@ -47,11 +47,28 @@
         </Border>
         <Border DockPanel.Dock="Top" Background="#FEF3C7" BorderBrush="#F59E0B" BorderThickness="0,0,0,1"
                 Padding="16,6" IsVisible="{Binding IsRemoteActive}">
-            <TextBlock Text="{Binding ActiveMachineBanner}" Foreground="#92400E"
-                       VerticalAlignment="Center" TextWrapping="Wrap" />
+            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                <Button Content="← Back to Fleet" Command="{Binding BackToLocalCommand}"
+                        Background="Transparent" Foreground="#92400E" BorderThickness="0" Padding="0" />
+                <TextBlock Text="{Binding ActiveMachineBanner}" Foreground="#92400E"
+                           VerticalAlignment="Center" TextWrapping="Wrap" />
+            </StackPanel>
         </Border>
 
-        <TabControl Margin="8" SelectedIndex="{Binding SelectedTabIndex}">
+        <!-- Sidebar of sections: vertical nav rail on the left, content on the right. -->
+        <TabControl Margin="8" SelectedIndex="{Binding SelectedTabIndex}"
+                    TabStripPlacement="Left">
+            <TabControl.Styles>
+                <Style Selector="TabItem">
+                    <Setter Property="FontSize" Value="14" />
+                    <Setter Property="Padding" Value="16,10" />
+                    <Setter Property="MinWidth" Value="150" />
+                    <Setter Property="HorizontalContentAlignment" Value="Left" />
+                </Style>
+                <Style Selector="TabItem:selected">
+                    <Setter Property="Background" Value="#EEF2FF" />
+                </Style>
+            </TabControl.Styles>
 
             <!-- DASHBOARD -->
             <TabItem Header="Dashboard" IsVisible="{Binding ThisMachineAvailable}">
@@ -343,83 +360,6 @@
             </TabItem>
 
             <!-- ANNOTATIONS -->
-            <TabItem Header="Annotations">
-                <DockPanel>
-                    <TextBlock DockPanel.Dock="Top" Margin="2,0,0,6" Foreground="#374151"
-                               Text="Tag processes, ports, and hosts with friendly names, owners, and criticality. These enrich the firewall PDF." />
-                    <Border DockPanel.Dock="Bottom" Background="#F3F4F6" Padding="12" Margin="0,8,0,0" CornerRadius="4">
-                        <StackPanel Spacing="8">
-                            <WrapPanel>
-                                <StackPanel Margin="0,0,12,0">
-                                    <TextBlock Text="Kind" FontSize="11" Foreground="#6B7280" />
-                                    <ComboBox Width="110" ItemsSource="{Binding Annotations.KindOptions}"
-                                              SelectedItem="{Binding Annotations.SelectedKind}" />
-                                </StackPanel>
-                                <StackPanel Margin="0,0,12,0">
-                                    <TextBlock Text="Key (process / port / host)" FontSize="11" Foreground="#6B7280" />
-                                    <TextBox Width="200" Text="{Binding Annotations.Key}" />
-                                </StackPanel>
-                                <StackPanel Margin="0,0,12,0">
-                                    <TextBlock Text="Friendly name" FontSize="11" Foreground="#6B7280" />
-                                    <TextBox Width="200" Text="{Binding Annotations.FriendlyName}" />
-                                </StackPanel>
-                                <StackPanel Margin="0,0,12,0">
-                                    <TextBlock Text="Owner" FontSize="11" Foreground="#6B7280" />
-                                    <TextBox Width="150" Text="{Binding Annotations.Owner}" />
-                                </StackPanel>
-                                <StackPanel Margin="0,0,12,0">
-                                    <TextBlock Text="Criticality" FontSize="11" Foreground="#6B7280" />
-                                    <ComboBox Width="110" ItemsSource="{Binding Annotations.CriticalityOptions}"
-                                              SelectedItem="{Binding Annotations.SelectedCriticality}" />
-                                </StackPanel>
-                            </WrapPanel>
-                            <StackPanel>
-                                <TextBlock Text="Notes" FontSize="11" Foreground="#6B7280" />
-                                <TextBox Text="{Binding Annotations.Notes}" AcceptsReturn="True" Height="46" />
-                            </StackPanel>
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <Button Content="Save / Update" Command="{Binding Annotations.SaveCommand}"
-                                        Background="#1F2937" Foreground="White" />
-                                <Button Content="New" Command="{Binding Annotations.NewCommand}" />
-                                <Button Content="Delete selected" Command="{Binding Annotations.DeleteCommand}" />
-                                <TextBlock Text="{Binding Annotations.Status}" VerticalAlignment="Center" Foreground="#374151" />
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
-                    <DataGrid x:CompileBindings="False" ItemsSource="{Binding Annotations.Items}"
-                              SelectedItem="{Binding Annotations.SelectedItem}" IsReadOnly="True" CanUserResizeColumns="True"
-                              GridLinesVisibility="Horizontal" CanUserSortColumns="True">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Kind" Binding="{Binding Kind}" Width="Auto" />
-                            <DataGridTextColumn Header="Key" Binding="{Binding Key}" Width="*" />
-                            <DataGridTextColumn Header="Friendly name" Binding="{Binding FriendlyName}" Width="*" />
-                            <DataGridTextColumn Header="Owner" Binding="{Binding Owner}" Width="*" />
-                            <DataGridTextColumn Header="Criticality" Binding="{Binding Criticality}" Width="Auto" />
-                            <DataGridTextColumn Header="Notes" Binding="{Binding Notes}" Width="2*" />
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </DockPanel>
-            </TabItem>
-
-            <!-- MAP -->
-            <TabItem Header="Map" IsVisible="{Binding ThisMachineAvailable}">
-                <DockPanel>
-                    <Border DockPanel.Dock="Top" Background="#F3F4F6" Padding="12,8" Margin="0,0,0,8" CornerRadius="4">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Text="Hours back" FontSize="11" Foreground="#6B7280" VerticalAlignment="Center" Margin="8,0,0,0" />
-                            <NumericUpDown Width="120" Minimum="1" Maximum="8760" Value="{Binding Map.HoursBack}" />
-                            <TextBlock Text="Max peers" FontSize="11" Foreground="#6B7280" VerticalAlignment="Center" Margin="8,0,0,0" />
-                            <NumericUpDown Width="100" Minimum="5" Maximum="200" Value="{Binding Map.MaxPeers}" />
-                            <Button Content="Refresh map" Command="{Binding Map.RefreshCommand}" Background="#1F2937" Foreground="White" />
-                            <TextBlock Text="{Binding Map.Status}" VerticalAlignment="Center" Foreground="#374151" />
-                        </StackPanel>
-                    </Border>
-                    <Border BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="4">
-                        <ctrl:DependencyMapControl Nodes="{Binding Map.Nodes}" Edges="{Binding Map.Edges}" />
-                    </Border>
-                </DockPanel>
-            </TabItem>
-
             <!-- REMOTE -->
             <TabItem Header="Remote">
                 <DockPanel>

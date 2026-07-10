@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Linq;
 using ServiceMap.App.Services;
 using ServiceMap.Core.Models;
 using ServiceMap.Core.Storage;
@@ -19,7 +20,7 @@ public sealed record MachineOption(string Name, string? DbPath)
 /// <summary>
 /// Root view model. Owns settings, the shared read-only data accessor, the GUI
 /// workspace store, the tab view models, and the auto-refresh timer.
-/// The "active machine" selection lets Dashboard/History/Map/PDF point at any
+/// The "active machine" selection lets Dashboard/History/PDF point at any
 /// collected server (local or a fleet/remote snapshot) instead of only local.
 /// </summary>
 public sealed partial class MainWindowViewModel : ViewModelBase
@@ -37,10 +38,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
 
     public DashboardViewModel Dashboard { get; }
     public HistoryViewModel History { get; }
-    public AnnotationsViewModel Annotations { get; }
     public FleetViewModel Fleet { get; }
     public RemoteViewModel Remote { get; }
-    public MapViewModel Map { get; }
     public FirewallViewModel Firewall { get; }
     public SettingsViewModel Settings { get; }
 
@@ -76,7 +75,6 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         {
             AnnotationsProvider = () => _workspace.GetAnnotationLookup()
         };
-        Annotations = new AnnotationsViewModel(_workspace);
         Fleet = new FleetViewModel(_multi)
         {
             AnnotationsProvider = () => _workspace.GetAnnotationLookup(),
@@ -90,7 +88,6 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             RefreshMachineOptions();
             Firewall.RefreshMachines();
         });
-        Map = new MapViewModel(_data, _multi);
         Firewall = new FirewallViewModel(_multi, () => _settings.DatabasePath,
             _settings.FirewallPolicyFolder,
             folder => { _settings.FirewallPolicyFolder = folder; _settings.Save(); });
@@ -101,8 +98,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         ThisMachineAvailable = localPresent && !AppModes.ForceConsole;
         if (!ThisMachineAvailable)
         {
-            // Dashboard(0) History(1) Map(2) then Remote(3) Fleet(4)…; open on Fleet.
-            SelectedTabIndex = 4;
+            // Dashboard(0) History(1) Remote(2) Fleet(3) Firewall(4) Settings(5); open on Fleet.
+            SelectedTabIndex = 3;
             ModeBanner = AppModes.ForceConsole
                 ? "Console mode (--console): viewer only. Import databases or run a remote scan from Fleet."
                 : "Console mode: no local collector on this machine. Import databases or run a remote scan from Fleet.";
@@ -152,15 +149,26 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     {
         Dashboard.Refresh();
         History.RunQueryCommand.Execute(null);
-        Map.RefreshCommand.Execute(null);
     }
 
-    /// <summary>Fleet "View this server" — switch the active machine to that server.</summary>
+    /// <summary>Fleet "View this server" — drill into that server's Dashboard/History (snapshot).</summary>
     private void ViewServer(MachineRef machine)
     {
         RefreshMachineOptions();
         var option = MachineOptions.FirstOrDefault(o => o.Name == machine.Name);
         if (option is not null) SelectedMachineOption = option;
+        // Land on Dashboard when available, otherwise History, so the drill-in shows data.
+        SelectedTabIndex = ThisMachineAvailable ? 0 : 1;
+    }
+
+    /// <summary>Breadcrumb "Back to Fleet": leave the snapshot and return to the Fleet list.</summary>
+    [RelayCommand]
+    private void BackToLocal()
+    {
+        var local = MachineOptions.FirstOrDefault(o => o.IsLocal) ?? MachineOptions.FirstOrDefault();
+        if (local is not null) SelectedMachineOption = local;
+        // Fleet index depends on whether This-Machine tabs are shown.
+        SelectedTabIndex = ThisMachineAvailable ? 3 : 1;
     }
 
     /// <summary>
