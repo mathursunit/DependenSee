@@ -12,7 +12,7 @@ namespace ServiceMap.Core.Storage;
 /// </summary>
 public sealed class SampleRepository : IDisposable
 {
-    private const int SchemaVersion = 4;
+    private const int SchemaVersion = 5;
 
     private readonly string _connectionString;
     private readonly bool _readOnly;
@@ -126,6 +126,31 @@ public sealed class SampleRepository : IDisposable
             CREATE INDEX IF NOT EXISTS ix_flow_last    ON connection_flows(last_seen);
             CREATE INDEX IF NOT EXISTS ix_flow_process ON connection_flows(process_name);
             CREATE INDEX IF NOT EXISTS ix_flow_remote  ON connection_flows(remote_address);
+
+            -- v5: distinct DNS resolutions (name<->IP per process), folded like flows.
+            CREATE TABLE IF NOT EXISTS dns_resolutions (
+                id             INTEGER PRIMARY KEY AUTOINCREMENT,
+                process_name   TEXT NOT NULL,
+                query_name     TEXT NOT NULL,
+                resolved_addr  TEXT NOT NULL,
+                first_seen     TEXT NOT NULL,
+                last_seen      TEXT NOT NULL,
+                sample_count   INTEGER NOT NULL,
+                UNIQUE(process_name, query_name, resolved_addr)
+            );
+            CREATE INDEX IF NOT EXISTS ix_dns_last ON dns_resolutions(last_seen);
+            CREATE INDEX IF NOT EXISTS ix_dns_name ON dns_resolutions(query_name);
+
+            -- v5: resource-utilization samples for right-sizing.
+            CREATE TABLE IF NOT EXISTS metric_samples (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp    TEXT NOT NULL,
+                cpu_pct      REAL NOT NULL,
+                mem_used_mb  REAL NOT NULL,
+                disk_iops    REAL NOT NULL,
+                net_mbps     REAL NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS ix_metric_ts ON metric_samples(timestamp);
             """;
         cmd.ExecuteNonQuery();
 
@@ -736,8 +761,112 @@ public sealed class SampleRepository : IDisposable
             cmd3.Parameters.AddWithValue("$cut", ToIso(flowCutoffUtc ?? rawCutoffUtc));
             cmd3.ExecuteNonQuery();
         }
+        if (TableExists(conn, "dns_resolutions"))
+        {
+            using var cmd4 = conn.CreateCommand();
+            cmd4.CommandText = "DELETE FROM dns_resolutions WHERE last_seen < $cut;";
+            cmd4.Parameters.AddWithValue("$cut", ToIso(flowCutoffUtc ?? rawCutoffUtc));
+            cmd4.ExecuteNonQuery();
+        }
+        if (TableExists(conn, "metric_samples"))
+        {
+            using var cmd5 = conn.CreateCommand();
+            cmd5.CommandText = "DELETE FROM metric_samples WHERE timestamp < $cut;";
+            cmd5.Parameters.AddWithValue("$cut", ToIso(rawCutoffUtc));
+            cmd5.ExecuteNonQuery();
+        }
 
         return n;
+    }
+
+    /// <summary>Upsert distinct DNS resolutions (process, name, IP), folding counts.</summary>
+    public void UpsertDnsResolutions(IReadOnlyCollection<DnsResolution> rows)
+    {
+        if (rows.Count == 0) return;
+        using var conn = Open();
+        using var tx = conn.BeginTransaction();
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = """
+            INSERT INTO dns_resolutions
+                (process_name, query_name, resolved_addr, first_seen, last_seen, sample_count)
+            VALUES ($p,$n,$a,$ts,$ts,$c)
+            ON CONFLICT(process_name, query_name, resolved_addr) DO UPDATE SET
+                first_seen   = MIN(first_seen, excluded.first_seen),
+                last_seen    = MAX(last_seen, excluded.last_seen),
+                sample_count = sample_count + excluded.sample_count;
+            """;
+        var pP = cmd.Parameters.Add("$p", SqliteType.Text);
+        var pN = cmd.Parameters.Add("$n", SqliteType.Text);
+        var pA = cmd.Parameters.Add("$a", SqliteType.Text);
+        var pTs = cmd.Parameters.Add("$ts", SqliteType.Text);
+        var pC = cmd.Parameters.Add("$c", SqliteType.Integer);
+        foreach (var r in rows)
+        {
+            pP.Value = r.ProcessName ?? string.Empty;
+            pN.Value = r.QueryName;
+            pA.Value = r.ResolvedAddress;
+            pTs.Value = ToIso(r.LastSeen == default ? DateTime.UtcNow : r.LastSeen);
+            pC.Value = r.Count <= 0 ? 1 : r.Count;
+            cmd.ExecuteNonQuery();
+        }
+        tx.Commit();
+    }
+
+    public IReadOnlyList<DnsResolution> GetDnsResolutions(int limit = 100000)
+    {
+        using var conn = Open();
+        if (!TableExists(conn, "dns_resolutions")) return Array.Empty<DnsResolution>();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT process_name, query_name, resolved_addr, first_seen, last_seen, sample_count " +
+                          "FROM dns_resolutions ORDER BY last_seen DESC LIMIT $l;";
+        cmd.Parameters.AddWithValue("$l", limit);
+        var list = new List<DnsResolution>();
+        using var r = cmd.ExecuteReader();
+        while (r.Read())
+            list.Add(new DnsResolution
+            {
+                ProcessName = r.GetString(0), QueryName = r.GetString(1), ResolvedAddress = r.GetString(2),
+                FirstSeen = FromIso(r.GetString(3)), LastSeen = FromIso(r.GetString(4)), Count = r.GetInt64(5)
+            });
+        return list;
+    }
+
+    /// <summary>Append resource-utilization samples.</summary>
+    public void InsertMetricSamples(IReadOnlyCollection<(DateTime Ts, double Cpu, double MemMb, double Iops, double Mbps)> samples)
+    {
+        if (samples.Count == 0) return;
+        using var conn = Open();
+        using var tx = conn.BeginTransaction();
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = "INSERT INTO metric_samples(timestamp,cpu_pct,mem_used_mb,disk_iops,net_mbps) " +
+                          "VALUES($ts,$cpu,$mem,$io,$net);";
+        var pTs = cmd.Parameters.Add("$ts", SqliteType.Text);
+        var pCpu = cmd.Parameters.Add("$cpu", SqliteType.Real);
+        var pMem = cmd.Parameters.Add("$mem", SqliteType.Real);
+        var pIo = cmd.Parameters.Add("$io", SqliteType.Real);
+        var pNet = cmd.Parameters.Add("$net", SqliteType.Real);
+        foreach (var s in samples)
+        {
+            pTs.Value = ToIso(s.Ts); pCpu.Value = s.Cpu; pMem.Value = s.MemMb;
+            pIo.Value = s.Iops; pNet.Value = s.Mbps;
+            cmd.ExecuteNonQuery();
+        }
+        tx.Commit();
+    }
+
+    public IReadOnlyList<(DateTime Ts, double Cpu, double MemMb, double Iops, double Mbps)> GetMetricSamples()
+    {
+        using var conn = Open();
+        if (!TableExists(conn, "metric_samples")) return Array.Empty<(DateTime, double, double, double, double)>();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT timestamp,cpu_pct,mem_used_mb,disk_iops,net_mbps FROM metric_samples ORDER BY timestamp;";
+        var list = new List<(DateTime, double, double, double, double)>();
+        using var r = cmd.ExecuteReader();
+        while (r.Read())
+            list.Add((FromIso(r.GetString(0)), r.GetDouble(1), r.GetDouble(2), r.GetDouble(3), r.GetDouble(4)));
+        return list;
     }
 
     public RepositoryStats GetStats()

@@ -16,6 +16,12 @@ public sealed class WindowsPlatformProvider : IPlatformProvider
     /// <summary>ETW kernel-network capture for flows too short-lived for polling.</summary>
     public IConnectionEventWatcher? CreateEventWatcher() => new EtwConnectionWatcher();
 
+    /// <summary>ETW DNS-Client capture (name resolutions per process).</summary>
+    public IDnsWatcher? CreateDnsWatcher() => new EtwDnsWatcher();
+
+    /// <summary>Windows performance-counter utilization sampler.</summary>
+    public IMetricSampler? CreateMetricSampler() => new WindowsMetricSampler();
+
     public bool IsElevated
     {
         get

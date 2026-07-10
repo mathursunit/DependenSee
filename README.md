@@ -68,6 +68,14 @@ already structured for it.
   freeze-drift detection land in every dossier; the fleet workbook rolls the
   estate up (inventory + readiness, full cross-dependency list, wave rollup
   with cross-wave counts).
+- **Deeper gathering (local collector)** — DNS resolutions per process (names
+  outlast IPs across a move), CPU/memory/disk/network utilization for target
+  right-sizing (peak + p95), identity/auth dependencies (Kerberos/LDAP/GC to
+  domain controllers) and non-builtin service accounts, and config scavenging
+  that finds hardcoded endpoints in app.config/appsettings/.env and flags any
+  not seen in observed traffic (passwords always masked). Save a **baseline**
+  and a later dossier diffs against it (missing / new / unchanged) for
+  cutover validation.
 - **Cloud rule generation** — every dossier includes AWS Security Group and
   Azure NSG starting points (Terraform + neutral JSON) derived from observed
   flows, plus a machine-readable dossier.json for pipelines. Headless export:

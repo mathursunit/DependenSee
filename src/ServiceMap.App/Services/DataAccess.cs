@@ -68,6 +68,15 @@ public sealed class DataAccess
     public string? GetMeta(string key) =>
         WithRepo(r => r.GetMeta(key), null);
 
+    /// <summary>Distinct DNS resolutions captured for this machine (empty on older databases).</summary>
+    public IReadOnlyList<DnsResolution> GetDnsResolutions() =>
+        WithRepo(r => r.GetDnsResolutions(), (IReadOnlyList<DnsResolution>)Array.Empty<DnsResolution>());
+
+    /// <summary>Resource-utilization samples for this machine (empty on older databases).</summary>
+    public IReadOnlyList<(DateTime Ts, double Cpu, double MemMb, double Iops, double Mbps)> GetMetricSamples() =>
+        WithRepo(r => r.GetMetricSamples(),
+            (IReadOnlyList<(DateTime, double, double, double, double)>)Array.Empty<(DateTime, double, double, double, double)>());
+
     /// <summary>Build the firewall-rule report from stored data.</summary>
     public FirewallReport BuildFirewallReport(ConnectionQuery q, FirewallReportOptions o) =>
         WithRepo(r => FirewallReportBuilder.Build(r, q, o), new FirewallReport());

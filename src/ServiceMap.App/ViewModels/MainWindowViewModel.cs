@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using ServiceMap.App.Services;
 using ServiceMap.Core.Models;
 using ServiceMap.Core.Storage;
+using ServiceMap.Core.Analysis;
 
 namespace ServiceMap.App.ViewModels;
 
@@ -168,6 +169,21 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             ExportStage = p.Stage;
         });
 
+        // Config scan only for the LOCAL machine (reads the real filesystem).
+        var isLocal = SelectedMachineOption is not { IsLocal: false };
+        var keepRaw = _settings.ConfigScanKeepRaw;
+        Func<IReadOnlyList<Core.Models.ServiceRecord>, List<Core.Analysis.ConfigEndpoint>>? configScan =
+            isLocal && OperatingSystem.IsWindows()
+                ? svcs => ConfigScanHelper.ScanLocal(svcs, keepRaw)
+                : null;
+
+        // Most recent saved baseline for this machine, if any.
+        (string, DateTime, IReadOnlyList<Core.Models.ConnectionAggregate>)? baseline = null;
+        var bl = _workspace.GetBaselines().FirstOrDefault(b =>
+            string.Equals(b.Machine, name, StringComparison.OrdinalIgnoreCase));
+        if (bl is not null)
+            baseline = (bl.Name, bl.Created, _workspace.GetBaselineFlows(bl.Id));
+
         IsExporting = true;
         ExportProgress = 0;
         ExportStage = "Starting…";
@@ -175,7 +191,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         {
             await Task.Run(() => DossierExporter.Export(
                 path, name, dbPath, wave, hours, _multi,
-                annotations, policyFolder, FindLogo(), progress));
+                annotations, policyFolder, FindLogo(), progress, baseline, configScan));
             ShellHelper.RevealAfterExport(path);
             History.ResultSummary = $"Dossier exported: {path}";
         }
@@ -194,6 +210,23 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     {
         var p = Path.Combine(AppContext.BaseDirectory, "assets", "DependenSee.png");
         return File.Exists(p) ? p : null;
+    }
+
+    /// <summary>
+    /// Save the active machine's current distinct flows as a named baseline, so
+    /// a later dossier can diff against it (pre/post-cutover validation).
+    /// </summary>
+    [RelayCommand]
+    private void SaveBaseline()
+    {
+        var name = SelectedMachineOption is { IsLocal: false } opt
+            ? opt.Name : _data.GetMachineName() ?? Environment.MachineName;
+        var flows = _data.QueryUnique(new ConnectionQuery { Limit = 1_000_000 });
+        if (flows.Count == 0) { History.ResultSummary = "No flows to baseline yet."; return; }
+        var label = $"{name} {DateTime.Now:yyyy-MM-dd HH:mm}";
+        _workspace.SaveBaseline(label, name, flows);
+        History.ResultSummary = $"Baseline saved: {label} ({flows.Count} flows). " +
+            "The next dossier for this machine will include a diff against it.";
     }
 
     /// <summary>Called once the window exists so dialogs (save/open) are available.</summary>

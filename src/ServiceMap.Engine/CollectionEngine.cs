@@ -2,6 +2,7 @@ using System.Linq;
 using ServiceMap.Core.Net;
 using ServiceMap.Core.Storage;
 using ServiceMap.Platform.Abstractions;
+using ServiceMap.Core.Models;
 
 namespace ServiceMap.Engine;
 
@@ -32,6 +33,45 @@ public sealed class CollectionEngine : IDisposable
             _eventWatcher = platform.CreateEventWatcher();
             _eventWatcher?.Start();
         }
+    }
+
+    private IDnsWatcher? _dnsWatcher;
+    private IMetricSampler? _metricSampler;
+
+    /// <summary>Start optional DNS capture (idempotent).</summary>
+    public void EnableDnsCapture()
+    {
+        if (_dnsWatcher is not null) return;
+        _dnsWatcher = _platform.CreateDnsWatcher();
+        _dnsWatcher?.Start();
+    }
+
+    public bool DnsCaptureActive => _dnsWatcher?.IsRunning == true;
+    public string? DnsCaptureError => _dnsWatcher?.LastError;
+
+    /// <summary>Drain captured DNS resolutions into the store (call on a slow cadence).</summary>
+    public int DrainDns()
+    {
+        if (_dnsWatcher is not { IsRunning: true }) return 0;
+        var rows = _dnsWatcher.Drain();
+        if (rows.Count == 0) return 0;
+        _repository.UpsertDnsResolutions(rows);
+        return rows.Count;
+    }
+
+    public void EnableMetrics()
+    {
+        _metricSampler ??= _platform.CreateMetricSampler();
+    }
+
+    public bool MetricsActive => _metricSampler?.IsSupported == true;
+
+    /// <summary>Take one utilization sample and persist it.</summary>
+    public void SampleMetricsOnce()
+    {
+        if (_metricSampler is not { IsSupported: true }) return;
+        var (cpu, mem, iops, mbps) = _metricSampler.Sample();
+        _repository.InsertMetricSamples(new[] { (DateTime.UtcNow, cpu, mem, iops, mbps) });
     }
 
     public string PlatformName => _platform.PlatformName;
@@ -98,7 +138,12 @@ public sealed class CollectionEngine : IDisposable
         return merged;
     }
 
-    public void Dispose() => _eventWatcher?.Dispose();
+    public void Dispose()
+    {
+        _eventWatcher?.Dispose();
+        _dnsWatcher?.Dispose();
+        _metricSampler?.Dispose();
+    }
 
     /// <summary>Snapshot the registered services, refresh the PID map, and persist.</summary>
     public int ScanServicesOnce()

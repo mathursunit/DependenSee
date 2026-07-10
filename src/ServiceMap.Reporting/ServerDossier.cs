@@ -3,6 +3,7 @@ using System.Text.Json;
 using ClosedXML.Excel;
 using ServiceMap.Core.Analysis;
 using ServiceMap.Core.Models;
+// DnsResolution lives in Core.Models
 
 namespace ServiceMap.Reporting;
 
@@ -57,6 +58,18 @@ public sealed class DossierData
     public List<RiskFinding> RiskFindings { get; } = new();
     /// <summary>Dependencies first observed in the last 7 days (freeze-drift check).</summary>
     public List<ConnectionAggregate> RecentDependencies { get; } = new();
+
+    // ---- Release B: richer gathering ----
+    public List<IdentityDependency> IdentityDependencies { get; } = new();
+    public List<ServiceRecord> NonBuiltinServiceAccounts { get; } = new();
+    public List<ConfigEndpoint> ConfigEndpoints { get; } = new();
+    public List<DnsResolution> DnsResolutions { get; } = new();
+    public MetricSummary? Metrics { get; set; }
+
+    public bool HasBaseline { get; set; }
+    public string BaselineName { get; set; } = string.Empty;
+    public DateTime? BaselineTakenUtc { get; set; }
+    public List<BaselineDiffRow> BaselineDiff { get; } = new();
 }
 
 /// <summary>
@@ -106,6 +119,32 @@ public static class ServerDossierWriter
 
         files.Add(WriteCsv(dir, "new-dependencies.csv", FlowHeader,
             d.RecentDependencies.Select(FlowRow)));
+
+        files.Add(WriteCsv(dir, "identity-dependencies.csv",
+            new[] { "kind", "remote_address", "port", "protocol", "count", "note" },
+            d.IdentityDependencies.Select(i => new[]
+                { i.Kind, i.RemoteAddress, i.Port.ToString(), i.Protocol, i.SampleCount.ToString(), i.Note })));
+
+        files.Add(WriteCsv(dir, "config-endpoints.csv",
+            new[] { "source", "kind", "host", "port", "observed_in_traffic", "value_redacted" },
+            d.ConfigEndpoints.Select(c => new[]
+                { c.Source, c.Kind, c.Host, c.Port.ToString(), c.ObservedInTraffic ? "yes" : "NO", c.Redacted ?? "" })));
+
+        if (d.DnsResolutions.Count > 0)
+            files.Add(WriteCsv(dir, "dns-resolutions.csv",
+                new[] { "process", "name", "resolved_ip", "count", "first_seen_utc", "last_seen_utc" },
+                d.DnsResolutions.Select(r => new[]
+                {
+                    r.ProcessName, r.QueryName, r.ResolvedAddress, r.Count.ToString(),
+                    r.FirstSeen == default ? "" : r.FirstSeen.ToString("o"),
+                    r.LastSeen == default ? "" : r.LastSeen.ToString("o")
+                })));
+
+        if (d.HasBaseline)
+            files.Add(WriteCsv(dir, "baseline-diff.csv",
+                new[] { "change", "direction", "protocol", "service", "remote_address", "port" },
+                d.BaselineDiff.Select(b => new[]
+                    { b.Change.ToString(), b.Direction, b.Protocol, b.ServiceOrProcess, b.RemoteAddress, b.Port.ToString() })));
 
         files.Add(WriteCsv(dir, "annotations.csv",
             new[] { "kind", "key", "friendly_name", "owner", "criticality", "notes" },
@@ -226,6 +265,20 @@ public static class ServerDossierWriter
                   $"{d.RiskFindings.Count(f => f.Severity == "Medium")} medium, " +
                   $"{d.RiskFindings.Count(f => f.Severity == "Low")} low"),
             ("New dependencies (7d)", d.RecentDependencies.Count.ToString()),
+            ("Identity dependencies", d.IdentityDependencies.Count == 0 ? "none observed"
+                : $"{d.IdentityDependencies.Count} (to {d.IdentityDependencies.Select(i => i.RemoteAddress).Distinct().Count()} host(s)) — DC/identity reachability required"),
+            ("Non-builtin service accounts", d.NonBuiltinServiceAccounts.Count == 0 ? "none"
+                : string.Join(", ", d.NonBuiltinServiceAccounts.Select(s => s.Account).Distinct().Take(6))),
+            ("Config-embedded endpoints", d.ConfigEndpoints.Count == 0 ? "none scanned/found"
+                : $"{d.ConfigEndpoints.Count} ({d.ConfigEndpoints.Count(c => !c.ObservedInTraffic)} not seen in traffic — verify before cutover)"),
+            ("DNS names resolved", d.DnsResolutions.Count == 0 ? "(not captured)"
+                : $"{d.DnsResolutions.Select(r => r.QueryName).Distinct().Count()} distinct"),
+            ("Utilization", d.Metrics is { SampleCount: > 0 } mm
+                ? $"CPU p95 {mm.CpuP95:F0}% peak {mm.CpuPeak:F0}%; mem p95 {mm.MemP95Mb:F0}MB peak {mm.MemPeakMb:F0}MB"
+                : "(not captured)"),
+            ("Baseline", d.HasBaseline
+                ? $"{d.BaselineName} ({d.BaselineTakenUtc:yyyy-MM-dd}) — {d.BaselineDiff.Count(b => b.Change == FlowChange.Missing)} missing, {d.BaselineDiff.Count(b => b.Change == FlowChange.New)} new"
+                : "(none saved)"),
             ("Firewall policy", d.PolicyLoaded
                 ? $"reconciled - {d.Reconciliation.Count} flows, {d.UnusedRules.Count} unused allow rules"
                 : "(no policy folder configured)"),
@@ -278,6 +331,32 @@ public static class ServerDossierWriter
 
         Sheet(wb, "New dependencies (7d)", FlowSheetHeader,
             d.RecentDependencies.Select(FlowSheetRow));
+
+        Sheet(wb, "Identity dependencies",
+            new[] { "Kind", "Remote address", "Port", "Proto", "Count", "Note" },
+            d.IdentityDependencies.Select(i => new object[]
+                { i.Kind, i.RemoteAddress, i.Port, i.Protocol, i.SampleCount, i.Note }));
+
+        Sheet(wb, "Config endpoints",
+            new[] { "Source", "Kind", "Host", "Port", "Seen in traffic?", "Value (redacted)" },
+            d.ConfigEndpoints.Select(c => new object[]
+                { c.Source, c.Kind, c.Host, c.Port, c.ObservedInTraffic ? "yes" : "NO", c.Redacted ?? "" }));
+
+        if (d.DnsResolutions.Count > 0)
+            Sheet(wb, "DNS resolutions",
+                new[] { "Process", "Name", "Resolved IP", "Count", "First seen", "Last seen" },
+                d.DnsResolutions.Select(r => new object[]
+                {
+                    r.ProcessName, r.QueryName, r.ResolvedAddress, r.Count,
+                    r.FirstSeen == default ? "" : r.FirstSeen.ToString("yyyy-MM-dd HH:mm"),
+                    r.LastSeen == default ? "" : r.LastSeen.ToString("yyyy-MM-dd HH:mm")
+                }));
+
+        if (d.HasBaseline)
+            Sheet(wb, "Baseline diff",
+                new[] { "Change", "Direction", "Proto", "Service", "Remote address", "Port" },
+                d.BaselineDiff.Select(b => new object[]
+                    { b.Change.ToString(), b.Direction, b.Protocol, b.ServiceOrProcess, b.RemoteAddress, b.Port }));
 
         Sheet(wb, "Annotations",
             new[] { "Kind", "Key", "Friendly name", "Owner", "Criticality", "Notes" },

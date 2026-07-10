@@ -17,6 +17,9 @@ public sealed class AppSettings
     /// <summary>After a successful export, open an Explorer window with the file selected.</summary>
     public bool OpenFolderAfterExport { get; set; } = true;
 
+    /// <summary>Keep full connection strings when scanning config for a dossier (passwords still masked).</summary>
+    public bool ConfigScanKeepRaw { get; set; } = false;
+
     private static string SettingsPath
     {
         get

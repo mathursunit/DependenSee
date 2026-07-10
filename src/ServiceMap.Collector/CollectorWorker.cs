@@ -23,6 +23,8 @@ public sealed class CollectorWorker : BackgroundService
     private DateTime _lastServiceScan = DateTime.MinValue;
     private DateTime _lastPrune = DateTime.MinValue;
     private DateTime _lastExport = DateTime.MinValue;
+    private DateTime _lastMetric = DateTime.MinValue;
+    private DateTime _lastDnsDrain = DateTime.MinValue;
 
     public CollectorWorker(
         ILogger<CollectorWorker> log,
@@ -64,6 +66,18 @@ public sealed class CollectorWorker : BackgroundService
                 "between sweeps may be missed.", _engine.EventCaptureError ?? "unknown");
         }
 
+        if (_options.DnsCaptureEnabled)
+        {
+            _engine.EnableDnsCapture();
+            if (_engine.DnsCaptureActive) _log.LogInformation("DNS-Client capture active.");
+            else _log.LogWarning("DNS capture unavailable ({Reason}).", _engine.DnsCaptureError ?? "unknown");
+        }
+        if (_options.MetricsEnabled)
+        {
+            _engine.EnableMetrics();
+            if (_engine.MetricsActive) _log.LogInformation("Utilization sampling active.");
+        }
+
         var interval = TimeSpan.FromSeconds(Math.Max(1, _options.SamplingIntervalSeconds));
 
         // Prime the service list immediately so the GUI has data on first open.
@@ -75,6 +89,8 @@ public sealed class CollectorWorker : BackgroundService
 
             SafeSampleConnections();
             MaybeScanServices();
+            MaybeSampleMetrics();
+            MaybeDrainDns();
             MaybePrune();
             MaybeExport();
 
@@ -121,6 +137,27 @@ public sealed class CollectorWorker : BackgroundService
         {
             _log.LogError(ex, "Service scan failed.");
         }
+    }
+
+    private void MaybeSampleMetrics()
+    {
+        if (!_options.MetricsEnabled) return;
+        if ((DateTime.UtcNow - _lastMetric).TotalSeconds < Math.Max(5, _options.MetricsIntervalSeconds)) return;
+        try { _engine.SampleMetricsOnce(); _lastMetric = DateTime.UtcNow; }
+        catch (Exception ex) { _log.LogDebug(ex, "Metric sample failed."); }
+    }
+
+    private void MaybeDrainDns()
+    {
+        if (!_options.DnsCaptureEnabled) return;
+        if ((DateTime.UtcNow - _lastDnsDrain).TotalSeconds < 30) return;
+        try
+        {
+            var n = _engine.DrainDns();
+            _lastDnsDrain = DateTime.UtcNow;
+            if (n > 0) _log.LogDebug("Stored {Count} DNS resolutions.", n);
+        }
+        catch (Exception ex) { _log.LogDebug(ex, "DNS drain failed."); }
     }
 
     private void MaybePrune()

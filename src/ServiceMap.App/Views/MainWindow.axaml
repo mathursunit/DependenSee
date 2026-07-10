@@ -196,6 +196,7 @@
                                         Background="#1F2937" Foreground="White" Margin="0,0,10,0" />
                                 <Button Content="Export dossier" Command="{Binding ExportDossierCommand}"
                                         IsEnabled="{Binding !IsExporting}" />
+                                <Button Content="Save baseline" Command="{Binding SaveBaselineCommand}" />
                                 <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center"
                                             IsVisible="{Binding IsExporting}">
                                     <ProgressBar Width="140" Minimum="0" Maximum="100"
@@ -641,6 +642,8 @@
                         </StackPanel>
                         <CheckBox Content="Open folder after export (reveals the saved file in Explorer)"
                                   IsChecked="{Binding Settings.OpenFolderAfterExport}" />
+                        <CheckBox Content="Keep full connection strings when scanning config (passwords still masked)"
+                                  IsChecked="{Binding Settings.ConfigScanKeepRaw}" />
                         <StackPanel Spacing="4">
                             <TextBlock Text="Dashboard refresh (seconds)" FontSize="11" Foreground="#6B7280" />
                             <NumericUpDown Width="140" HorizontalAlignment="Left" Minimum="1" Maximum="300"

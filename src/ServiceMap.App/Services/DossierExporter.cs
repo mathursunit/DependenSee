@@ -2,8 +2,8 @@ using System.IO.Compression;
 using ServiceMap.Core.Analysis;
 using ServiceMap.Core.Models;
 using ServiceMap.Core.Storage;
-using ServiceMap.Firewall.Matching;
 using ServiceMap.Reporting;
+using ServiceMap.Firewall.Matching;
 using ServiceMap.App.ViewModels;
 
 namespace ServiceMap.App.Services;
@@ -27,7 +27,9 @@ public static class DossierExporter
         IReadOnlyDictionary<string, Annotation> annotations,
         string policyFolder,
         string? logoPath,
-        IProgress<(int Percent, string Stage)>? progress = null)
+        IProgress<(int Percent, string Stage)>? progress = null,
+        (string Name, DateTime Taken, IReadOnlyList<ConnectionAggregate> Flows)? baseline = null,
+        Func<IReadOnlyList<ServiceRecord>, List<ConfigEndpoint>>? configScan = null)
     {
         void Report(int pct, string stage) => progress?.Report((pct, stage));
 
@@ -73,6 +75,39 @@ public static class DossierExporter
         d.ReadinessNotes.AddRange(readiness.Notes);
         d.RiskFindings.AddRange(RiskFlags.Analyze(flows));
         d.RecentDependencies.AddRange(RiskFlags.RecentlyAppeared(flows));
+
+        // Identity/auth dependencies + non-builtin service accounts.
+        d.IdentityDependencies.AddRange(IdentityMap.FromFlows(flows));
+        d.NonBuiltinServiceAccounts.AddRange(IdentityMap.NonBuiltinServiceAccounts(d.Services));
+
+        // DNS resolutions + utilization rollup (present only if the collector gathered them).
+        d.DnsResolutions.AddRange(data.GetDnsResolutions());
+        var metricSamples = data.GetMetricSamples()
+            .Select(x => new MetricSample(x.Ts, x.Cpu, x.MemMb, x.Iops, x.Mbps)).ToList();
+        if (metricSamples.Count > 0) d.Metrics = MetricRollup.Summarize(metricSamples);
+
+        // Config-embedded endpoints (local machine only; caller supplies the scanner),
+        // reconciled against observed traffic — endpoints not seen are landmines.
+        if (configScan is not null)
+        {
+            var endpoints = configScan(d.Services);
+            var observedHosts = new HashSet<string>(
+                flows.Select(f => f.RemoteAddress).Where(a => a.Length > 0), StringComparer.OrdinalIgnoreCase);
+            var observedNames = new HashSet<string>(
+                d.DnsResolutions.Select(r => r.QueryName), StringComparer.OrdinalIgnoreCase);
+            foreach (var e in endpoints)
+                e.ObservedInTraffic = observedHosts.Contains(e.Host) || observedNames.Contains(e.Host);
+            d.ConfigEndpoints.AddRange(endpoints);
+        }
+
+        // Baseline diff, when a baseline was supplied.
+        if (baseline is { } b)
+        {
+            d.HasBaseline = true;
+            d.BaselineName = b.Name;
+            d.BaselineTakenUtc = b.Taken;
+            d.BaselineDiff.AddRange(BaselineComparer.Compare(b.Flows, flows));
+        }
 
         // Firewall reconciliation, when a policy folder is configured.
         Report(30, "Reconciling against firewall policy…");

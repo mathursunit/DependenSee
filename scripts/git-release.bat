@@ -2,7 +2,7 @@
 rem Commit everything, tag, and push. Output: scripts\git-release-log.txt
 setlocal
 set "LOG=%~dp0git-release-log.txt"
-set "TAG=v1.12.0"
+set "TAG=v1.13.0"
 cd /d "%~dp0.."
 
 echo === git release %TAG% %DATE% %TIME% === > "%LOG%"
@@ -10,7 +10,7 @@ git remote -v >> "%LOG%" 2>&1
 git rev-parse --abbrev-ref HEAD >> "%LOG%" 2>&1
 
 git add -A >> "%LOG%" 2>&1
-git commit -m "v1.12.0: analysis + export intelligence (Release A)" -m "- Migration readiness score per machine (window/sweeps/attribution, explained) in Fleet and dossier" -m "- Freeze-drift detection: dependencies first seen in last 7 days (Fleet column, dossier sheet + CSV)" -m "- Risk protocol findings: telnet/FTP/r-services/cleartext LDAP/NetBIOS/internet-exposed listeners" -m "- Fleet-wide workbook: inventory + readiness, cross-dependency list, wave rollup with cross-wave counts" -m "- Dossier now includes dossier.json and cloud-rules/ (AWS SG + Azure NSG Terraform + neutral JSON)" -m "- Headless CLI: export-dossier --machine|--all|--local --hours --out" -m "- 154 tests" >> "%LOG%" 2>&1
+git commit -m "v1.13.0: deeper data gathering (Release B)" -m "- DNS-Client ETW capture, folded to distinct name<->IP per process (schema v5)" -m "- Resource-utilization sampling (CPU/mem/disk/net) with p95/peak rollup for right-sizing" -m "- Config scavenging: hardcoded endpoints from app.config/appsettings/.env, reconciled vs traffic; passwords always masked, opt-in raw" -m "- Identity/auth dependency mapping (Kerberos/LDAP/GC/DC) + non-builtin service accounts" -m "- Baseline save + diff (missing/new/unchanged) for pre/post-cutover validation" -m "- All surfaced in the dossier (sheets + CSVs + dossier.json); split retention extended to new tables" -m "- 167 tests" >> "%LOG%" 2>&1
 echo COMMIT_EXIT=%errorlevel% >> "%LOG%"
 
 git tag %TAG% >> "%LOG%" 2>&1

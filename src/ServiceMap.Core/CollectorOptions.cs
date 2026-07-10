@@ -41,6 +41,21 @@ public sealed class CollectorOptions
     /// </summary>
     public bool EventCaptureEnabled { get; set; } = true;
 
+    /// <summary>Capture DNS resolutions per process via ETW (Windows, elevated).</summary>
+    public bool DnsCaptureEnabled { get; set; } = true;
+
+    /// <summary>Sample machine resource utilization for target right-sizing.</summary>
+    public bool MetricsEnabled { get; set; } = true;
+
+    /// <summary>Seconds between utilization samples.</summary>
+    public int MetricsIntervalSeconds { get; set; } = 30;
+
+    /// <summary>
+    /// Retain full config connection strings during scavenging (still with
+    /// passwords masked). Off by default — extract host/port only.
+    /// </summary>
+    public bool ConfigScanKeepRaw { get; set; } = false;
+
     /// <summary>How often the retention prune runs.</summary>
     public int RetentionSweepMinutes { get; set; } = 60;
 

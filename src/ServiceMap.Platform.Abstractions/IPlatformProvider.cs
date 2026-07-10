@@ -23,4 +23,10 @@ public interface IPlatformProvider
     /// so platform implementations without event capture need no change.
     /// </summary>
     IConnectionEventWatcher? CreateEventWatcher() => null;
+
+    /// <summary>Create a DNS-resolution watcher, or null when unsupported.</summary>
+    IDnsWatcher? CreateDnsWatcher() => null;
+
+    /// <summary>Create a resource-utilization sampler, or null when unsupported.</summary>
+    IMetricSampler? CreateMetricSampler() => null;
 }
