@@ -25,8 +25,12 @@ public static class DossierExporter
         MultiSourceDataAccess multi,
         IReadOnlyDictionary<string, Annotation> annotations,
         string policyFolder,
-        string? logoPath)
+        string? logoPath,
+        IProgress<(int Percent, string Stage)>? progress = null)
     {
+        void Report(int pct, string stage) => progress?.Report((pct, stage));
+
+        Report(5, "Querying flows…");
         var data = new DataAccess(() => dbPath);
         var window = new ConnectionQuery
         {
@@ -35,6 +39,7 @@ public static class DossierExporter
         };
         var flows = data.QueryUnique(window);
 
+        Report(15, "Gathering services and dependencies…");
         var d = new DossierData
         {
             MachineName = machineName,
@@ -61,6 +66,7 @@ public static class DossierExporter
         }
 
         // Firewall reconciliation, when a policy folder is configured.
+        Report(30, "Reconciling against firewall policy…");
         var fw = new FirewallService();
         if (!string.IsNullOrWhiteSpace(policyFolder) && fw.Load(policyFolder) && fw.Policy is { } policy)
         {
@@ -86,6 +92,7 @@ public static class DossierExporter
                     Protocol = f.Protocol.ToString(),
                     Service = f.ServiceOrProcess,
                     Rule = m.RuleName ?? "",
+                    RuleRef = m.RuleRef ?? "",
                     Policy = m.Policy ?? "",
                     Zones = ZoneText(m.SourceZone, m.DestZone),
                     Count = f.SampleCount
@@ -101,6 +108,7 @@ public static class DossierExporter
                     Direction = "-",
                     Service = string.Join(", ", r.Services.Concat(r.Applications).Distinct()),
                     Rule = r.Name,
+                    RuleRef = r.RuleRef,
                     Policy = r.Policy + (string.IsNullOrEmpty(r.Usage) ? "" : $" · usage: {r.Usage}"),
                     Zones = ZoneText(r.SourceZone, r.DestZone)
                 });
@@ -111,8 +119,10 @@ public static class DossierExporter
         var stage = Path.Combine(Path.GetTempPath(), "cds-dossier-" + Guid.NewGuid().ToString("N"));
         try
         {
+            Report(45, "Writing workbook and CSVs…");
             ServerDossierWriter.Write(d, stage);
 
+            Report(60, "Building firewall PDF (reverse-DNS)…");
             var pdfQuery = new ConnectionQuery
             {
                 From = DateTime.UtcNow.AddHours(-Math.Max(1, hoursBack)),
@@ -128,8 +138,10 @@ public static class DossierExporter
             });
             FirewallReportPdf.Save(report, Path.Combine(stage, Sanitize(machineName) + "-firewall.pdf"));
 
+            Report(92, "Compressing…");
             if (File.Exists(zipPath)) File.Delete(zipPath);
             ZipFile.CreateFromDirectory(stage, zipPath, CompressionLevel.Optimal, includeBaseDirectory: false);
+            Report(100, "Done");
             return zipPath;
         }
         finally

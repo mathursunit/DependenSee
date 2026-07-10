@@ -194,7 +194,15 @@
                                 <Button Content="Export JSON" Command="{Binding History.ExportJsonCommand}" Margin="0,0,16,0" />
                                 <Button Content="Export firewall PDF" Command="{Binding History.ExportFirewallPdfCommand}"
                                         Background="#1F2937" Foreground="White" Margin="0,0,10,0" />
-                                <Button Content="Export dossier" Command="{Binding ExportDossierCommand}" />
+                                <Button Content="Export dossier" Command="{Binding ExportDossierCommand}"
+                                        IsEnabled="{Binding !IsExporting}" />
+                                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center"
+                                            IsVisible="{Binding IsExporting}">
+                                    <ProgressBar Width="140" Minimum="0" Maximum="100"
+                                                 Value="{Binding ExportProgress}" />
+                                    <TextBlock Text="{Binding ExportStage}" FontSize="11" Foreground="#6B7280"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
                                 <CheckBox Content="Resolve names" IsChecked="{Binding History.ResolveHostnames}" Margin="0,0,12,0"
                                           VerticalAlignment="Center" />
                                 <CheckBox Content="Summarize /24" IsChecked="{Binding History.SummarizeSources}"
@@ -487,7 +495,11 @@
                                 <TextBlock Text="Wave" FontSize="11" Foreground="#6B7280" VerticalAlignment="Center" Margin="8,0,0,0" />
                                 <TextBox Width="120" Text="{Binding Fleet.WaveInput}" />
                                 <Button Content="Assign wave" Command="{Binding Fleet.AssignWaveCommand}" />
-                                <Button Content="Export dossier" Command="{Binding Fleet.ExportDossierCommand}" />
+                                <Button Content="Export dossier" Command="{Binding Fleet.ExportDossierCommand}"
+                                        IsEnabled="{Binding !Fleet.IsExporting}" />
+                                <ProgressBar Width="140" Minimum="0" Maximum="100" VerticalAlignment="Center"
+                                             IsVisible="{Binding Fleet.IsExporting}"
+                                             Value="{Binding Fleet.ExportProgress}" />
                                 <Button Content="Export server PDF" Command="{Binding Fleet.ExportServerPdfCommand}"
                                         Background="#1F2937" Foreground="White" Margin="16,0,0,0" />
                             </StackPanel>
@@ -581,6 +593,7 @@
                             <DataGridTextColumn Header="Proto" Binding="{Binding Protocol}" Width="Auto" />
                             <DataGridTextColumn Header="Service" Binding="{Binding Service}" Width="140" />
                             <DataGridTextColumn Header="Matching rule" Binding="{Binding Rule}" Width="*" />
+                            <DataGridTextColumn Header="Rule #" Binding="{Binding RuleRef}" Width="Auto" />
                             <DataGridTextColumn Header="Policy" Binding="{Binding Policy}" Width="120" />
                             <DataGridTextColumn Header="Zones" Binding="{Binding Zones}" Width="Auto" />
                             <DataGridTextColumn Header="Count" Binding="{Binding Count}" Width="Auto" />

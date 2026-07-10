@@ -15,6 +15,8 @@ public sealed class DossierReconRow
     public string Protocol { get; set; } = string.Empty;
     public string Service { get; set; } = string.Empty;
     public string Rule { get; set; } = string.Empty;
+    /// <summary>Export-native rule identifier (device group + position / "No.").</summary>
+    public string RuleRef { get; set; } = string.Empty;
     public string Policy { get; set; } = string.Empty;
     public string Zones { get; set; } = string.Empty;
     public long Count { get; set; }
@@ -151,12 +153,12 @@ public static class ServerDossierWriter
     };
 
     private static readonly string[] ReconHeader =
-        { "coverage", "direction", "remote_address", "port", "protocol", "service", "rule", "policy", "zones", "count" };
+        { "coverage", "direction", "remote_address", "port", "protocol", "service", "rule", "rule_ref", "policy", "zones", "count" };
 
     private static string[] ReconRow(DossierReconRow r) => new[]
     {
         r.Coverage, r.Direction, r.RemoteAddress, r.Port.ToString(), r.Protocol,
-        r.Service, r.Rule, r.Policy, r.Zones, r.Count.ToString()
+        r.Service, r.Rule, r.RuleRef, r.Policy, r.Zones, r.Count.ToString()
     };
 
     private static void WriteWorkbook(DossierData d, string path)
@@ -248,10 +250,10 @@ public static class ServerDossierWriter
     };
 
     private static readonly string[] ReconSheetHeader =
-        { "Coverage", "Direction", "Remote address", "Port", "Proto", "Service", "Rule", "Policy", "Zones", "Count" };
+        { "Coverage", "Direction", "Remote address", "Port", "Proto", "Service", "Rule", "Rule #", "Policy", "Zones", "Count" };
 
     private static object[] ReconSheetRow(DossierReconRow r) => new object[]
-        { r.Coverage, r.Direction, r.RemoteAddress, r.Port, r.Protocol, r.Service, r.Rule, r.Policy, r.Zones, r.Count };
+        { r.Coverage, r.Direction, r.RemoteAddress, r.Port, r.Protocol, r.Service, r.Rule, r.RuleRef, r.Policy, r.Zones, r.Count };
 
     /// <summary>Add a data sheet: bold frozen header, autofilter, sensible widths.</summary>
     private static void Sheet(XLWorkbook wb, string name, string[] header, IEnumerable<object[]> rows)

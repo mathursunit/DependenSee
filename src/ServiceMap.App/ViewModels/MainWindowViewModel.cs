@@ -50,6 +50,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private bool _isRemoteActive;
     [ObservableProperty] private bool _isLocalActive = true;
     [ObservableProperty] private string _activeMachineBanner = string.Empty;
+    [ObservableProperty] private bool _isExporting;
+    [ObservableProperty] private double _exportProgress;
+    [ObservableProperty] private string _exportStage = string.Empty;
 
     public MainWindowViewModel()
     {
@@ -154,19 +157,36 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         var suggested = $"{name}-dossier-{DateTime.Now:yyyyMMdd-HHmmss}.zip";
         var path = await _dialogs.SaveAsync(suggested, "zip", _settings.ExportDirectory);
         if (path is null) return;
+        if (IsExporting) return;
 
+        var annotations = _workspace.GetAnnotationLookup();
+        var policyFolder = _settings.FirewallPolicyFolder;
+        var hours = Math.Max(1, History.HoursBack);
+        var progress = new Progress<(int Percent, string Stage)>(p =>
+        {
+            ExportProgress = p.Percent;
+            ExportStage = p.Stage;
+        });
+
+        IsExporting = true;
+        ExportProgress = 0;
+        ExportStage = "Starting…";
         try
         {
-            History.ResultSummary = $"Building dossier for {name}…";
-            DossierExporter.Export(
-                path, name, dbPath, wave, Math.Max(1, History.HoursBack), _multi,
-                _workspace.GetAnnotationLookup(), _settings.FirewallPolicyFolder, FindLogo());
+            await Task.Run(() => DossierExporter.Export(
+                path, name, dbPath, wave, hours, _multi,
+                annotations, policyFolder, FindLogo(), progress));
             ShellHelper.RevealAfterExport(path);
             History.ResultSummary = $"Dossier exported: {path}";
         }
         catch (Exception ex)
         {
             History.ResultSummary = "Dossier export failed: " + ex.Message;
+        }
+        finally
+        {
+            IsExporting = false;
+            ExportStage = string.Empty;
         }
     }
 

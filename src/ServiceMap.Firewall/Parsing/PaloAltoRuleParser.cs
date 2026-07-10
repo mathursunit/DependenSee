@@ -21,6 +21,9 @@ public static class PaloAltoRuleParser
                 Vendor = FwVendor.PaloAlto,
                 Policy = policyName,
                 Order = ++order,
+                // First (unnamed) column is the rule's position in its device group.
+                Number = rows[r].Length > 0 ? rows[r][0].Trim() : string.Empty,
+                Location = Csv.Col(rows[r], h, "Location"),
                 Name = name,
                 Action = ToAction(Csv.Col(rows[r], h, "Action")),
                 SourceZone = Csv.Col(rows[r], h, "Source Zone"),

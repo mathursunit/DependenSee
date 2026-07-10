@@ -28,6 +28,7 @@ public static class CheckpointRuleParser
                 Vendor = FwVendor.CheckPoint,
                 Policy = policyName,
                 Order = ++order,
+                Number = Csv.Col(rows[r], h, "No."),
                 Name = name.Length > 0 ? name : $"rule-{order}",
                 Action = ToAction(Csv.Col(rows[r], h, "Action")),
                 Comment = Csv.Col(rows[r], h, "Comments")

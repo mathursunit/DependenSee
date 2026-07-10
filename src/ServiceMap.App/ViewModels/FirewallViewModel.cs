@@ -22,6 +22,8 @@ public sealed class FwReconRow
     public string Service { get; set; } = string.Empty;
     public string Coverage { get; set; } = string.Empty;
     public string Rule { get; set; } = string.Empty;
+    /// <summary>Export-native rule identifier: device group + position (Palo) or "No." (Check Point).</summary>
+    public string RuleRef { get; set; } = string.Empty;
     public string Policy { get; set; } = string.Empty;
     public string Zones { get; set; } = string.Empty;
     public long Count { get; set; }
@@ -157,6 +159,7 @@ public sealed partial class FirewallViewModel : ViewModelBase
                 Service = f.ServiceOrProcess,
                 Coverage = m.Coverage.ToString(),
                 Rule = m.RuleName ?? "",
+                RuleRef = m.RuleRef ?? "",
                 Policy = m.Policy ?? "",
                 Zones = ZoneText(m.SourceZone, m.DestZone),
                 Count = f.SampleCount
@@ -200,6 +203,7 @@ public sealed partial class FirewallViewModel : ViewModelBase
                 Service = Truncate(string.Join(", ", r.Services.Concat(r.Applications).Distinct()), 40),
                 Coverage = "Unused",
                 Rule = r.Name,
+                RuleRef = r.RuleRef,
                 Policy = r.Policy + (string.IsNullOrEmpty(r.Usage) ? "" : $" · usage: {r.Usage}"),
                 Zones = ZoneText(r.SourceZone, r.DestZone),
                 Count = 0
@@ -237,12 +241,12 @@ public sealed partial class FirewallViewModel : ViewModelBase
         if (path is null) return;
 
         var sb = new StringBuilder();
-        sb.AppendLine("coverage,direction,remote_address,remote_object,groups,port,protocol,service,rule,policy,zones,count");
+        sb.AppendLine("coverage,direction,remote_address,remote_object,groups,port,protocol,service,rule,rule_ref,policy,zones,count");
         foreach (var r in rows)
             sb.AppendLine(string.Join(",", new[]
             {
                 r.Coverage, r.Direction, r.RemoteAddress, Q(r.RemoteObject), Q(r.Groups), r.Port.ToString(),
-                r.Protocol, Q(r.Service), Q(r.Rule), Q(r.Policy), Q(r.Zones), r.Count.ToString()
+                r.Protocol, Q(r.Service), Q(r.Rule), Q(r.RuleRef), Q(r.Policy), Q(r.Zones), r.Count.ToString()
             }));
         File.WriteAllText(path, sb.ToString());
         ShellHelper.RevealAfterExport(path);

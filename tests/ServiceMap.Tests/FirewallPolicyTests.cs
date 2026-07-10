@@ -35,6 +35,7 @@ public class FirewallPolicyTests
         var m = Policy().MatchFlow(new FlowKey("10.10.5.20", "8.8.8.8", 51000, 443, Outbound: true, "tcp"));
         Assert.Equal(FwCoverage.Covered, m.Coverage);
         Assert.Equal("Allow Web Out", m.RuleName);
+        Assert.Equal("#1", m.RuleRef);   // no Location column in this fixture
         Assert.Equal("TRUST", m.SourceZone);
         Assert.Equal("UNTRUST", m.DestZone);
     }

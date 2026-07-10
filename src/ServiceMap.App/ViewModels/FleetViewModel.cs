@@ -47,6 +47,8 @@ public sealed partial class FleetViewModel : ViewModelBase
     [ObservableProperty] private string? _waveInput;
     [ObservableProperty] private int _hoursBack = 168;
     [ObservableProperty] private string _status = "Import or scan one or more machines to begin.";
+    [ObservableProperty] private bool _isExporting;
+    [ObservableProperty] private double _exportProgress;
 
     public FleetViewModel(MultiSourceDataAccess multi)
     {
@@ -221,22 +223,35 @@ public sealed partial class FleetViewModel : ViewModelBase
         var suggested = $"{machine.Name}-dossier-{DateTime.Now:yyyyMMdd-HHmmss}.zip";
         var path = await SaveService.SaveAsync(suggested, "zip", Path.GetDirectoryName(machine.DatabasePath));
         if (path is null) return;
+        if (IsExporting) return;
 
+        var annotations = AnnotationsProvider?.Invoke() ?? new Dictionary<string, Annotation>();
+        var policyFolder = PolicyFolderProvider?.Invoke() ?? string.Empty;
+        var hours = Math.Max(1, HoursBack);
+        // Progress<T> posts back to the UI thread it was created on.
+        var progress = new Progress<(int Percent, string Stage)>(p =>
+        {
+            ExportProgress = p.Percent;
+            Status = $"Dossier for {machine.Name}: {p.Stage}";
+        });
+
+        IsExporting = true;
+        ExportProgress = 0;
         try
         {
-            Status = $"Building dossier for {machine.Name}…";
-            DossierExporter.Export(
+            await Task.Run(() => DossierExporter.Export(
                 path, machine.Name, machine.DatabasePath, machine.Wave ?? string.Empty,
-                Math.Max(1, HoursBack), _multi,
-                AnnotationsProvider?.Invoke() ?? new Dictionary<string, Annotation>(),
-                PolicyFolderProvider?.Invoke() ?? string.Empty,
-                FindLogo());
+                hours, _multi, annotations, policyFolder, FindLogo(), progress));
             ShellHelper.RevealAfterExport(path);
             Status = $"Dossier exported: {path}";
         }
         catch (Exception ex)
         {
             Status = "Dossier export failed: " + ex.Message;
+        }
+        finally
+        {
+            IsExporting = false;
         }
     }
 

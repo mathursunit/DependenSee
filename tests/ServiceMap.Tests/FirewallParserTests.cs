@@ -25,6 +25,10 @@ public class PaloAltoRuleParserTests
         Assert.Equal("TRUST", allow.SourceZone);
         Assert.Equal("UNTRUST", allow.DestZone);
         Assert.Equal("Used", allow.Usage);
+        // Export-native identifiers: position number + device group.
+        Assert.Equal("1", allow.Number);
+        Assert.Equal("LOC", allow.Location);
+        Assert.Equal("LOC #1", allow.RuleRef);
         Assert.Single(allow.Sources);
         Assert.Contains("service-https", allow.Services);
 
@@ -49,6 +53,8 @@ public class CheckpointRuleParserTests
         var rules = CheckpointRuleParser.Parse(Csv);
         Assert.Equal(2, rules.Count);
         Assert.Equal(FwAction.Deny, rules[0].Action);
+        Assert.Equal("1", rules[0].Number);
+        Assert.Equal("#2", rules[1].RuleRef);
         Assert.Equal(FwAction.Allow, rules[1].Action);
         Assert.Equal(2, rules[1].Services.Count);   // ';'-separated
         Assert.Equal(FwVendor.CheckPoint, rules[1].Vendor);

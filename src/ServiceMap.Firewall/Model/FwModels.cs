@@ -20,7 +20,23 @@ public sealed class FwRule
     public FwVendor Vendor { get; set; }
     public string Policy { get; set; } = string.Empty;   // e.g. "CWAN Egress", "Checkpoint"
     public int Order { get; set; }
+
+    /// <summary>
+    /// The export's own rule number: Palo Alto's position within the device
+    /// group (first CSV column), Check Point's "No." column. This is how a
+    /// firewall admin finds the rule in Panorama/SmartConsole.
+    /// </summary>
+    public string Number { get; set; } = string.Empty;
+
+    /// <summary>Palo Alto device group ("Location" column); empty for Check Point.</summary>
+    public string Location { get; set; } = string.Empty;
+
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>Human-readable unique reference, e.g. "AMER-AWS-DYN-EGRESS #12".</summary>
+    public string RuleRef =>
+        (Location.Length > 0 ? Location + " " : string.Empty) +
+        (Number.Length > 0 ? "#" + Number : string.Empty);
     public FwAction Action { get; set; }
 
     public List<string> Sources { get; } = new();        // refs: object/group names, CIDRs, "any"

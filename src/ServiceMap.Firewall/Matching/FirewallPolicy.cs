@@ -10,6 +10,8 @@ public sealed class FwMatchResult
 {
     public FwCoverage Coverage { get; set; }
     public string? RuleName { get; set; }
+    /// <summary>The export's own rule identifier (device group + position / "No.").</summary>
+    public string? RuleRef { get; set; }
     public string? Policy { get; set; }
     public string? SourceZone { get; set; }
     public string? DestZone { get; set; }
@@ -101,8 +103,8 @@ public sealed class FirewallPolicy
         if (allow is not null)
             return new FwMatchResult
             {
-                Coverage = FwCoverage.Covered, RuleName = allow.Name, Policy = allow.Policy,
-                SourceZone = allow.SourceZone, DestZone = allow.DestZone
+                Coverage = FwCoverage.Covered, RuleName = allow.Name, RuleRef = allow.RuleRef,
+                Policy = allow.Policy, SourceZone = allow.SourceZone, DestZone = allow.DestZone
             };
 
         // A specific (non catch-all) deny is a real block worth flagging.
@@ -110,8 +112,8 @@ public sealed class FirewallPolicy
         if (deny is not null)
             return new FwMatchResult
             {
-                Coverage = FwCoverage.Denied, RuleName = deny.Name, Policy = deny.Policy,
-                SourceZone = deny.SourceZone, DestZone = deny.DestZone
+                Coverage = FwCoverage.Denied, RuleName = deny.Name, RuleRef = deny.RuleRef,
+                Policy = deny.Policy, SourceZone = deny.SourceZone, DestZone = deny.DestZone
             };
 
         // Otherwise only a catch-all cleanup (or nothing) matched: no specific rule exists.
