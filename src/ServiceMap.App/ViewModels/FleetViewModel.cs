@@ -3,6 +3,7 @@ using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ServiceMap.App.Services;
+using ServiceMap.Core.Analysis;
 using ServiceMap.Core.Models;
 using ServiceMap.Core.Storage;
 using ServiceMap.Reporting;
@@ -104,7 +105,107 @@ public sealed partial class FleetViewModel : ViewModelBase
     public void ReloadMachines()
     {
         Machines.Clear();
-        foreach (var m in _multi.GetMachines()) Machines.Add(m);
+        foreach (var m in _multi.GetMachines())
+        {
+            ComputeMachineHealth(m);
+            Machines.Add(m);
+        }
+    }
+
+    /// <summary>
+    /// Fill the computed fleet columns (readiness, freeze-drift, source) from the
+    /// machine's database. Cheap: unique-flow queries are flow-table backed.
+    /// </summary>
+    private static void ComputeMachineHealth(MachineRef m)
+    {
+        try
+        {
+            if (!File.Exists(m.DatabasePath)) { m.ReadinessText = "(db missing)"; return; }
+            var data = new DataAccess(() => m.DatabasePath);
+            var flows = data.QueryUnique(new ConnectionQuery { Limit = 1_000_000 });
+            var sweeps = long.TryParse(data.GetMeta("sweep_count"), out var sc) ? sc : 0;
+            m.Source = data.GetMeta("collection_source") ?? string.Empty;
+
+            var r = Readiness.Compute(Readiness.FromFlows(flows, sweeps, m.Source));
+            m.ReadinessScore = r.Score;
+            m.ReadinessText = $"{r.Rating} ({r.Score})";
+            m.NewDeps7d = RiskFlags.RecentlyAppeared(flows).Count;
+        }
+        catch
+        {
+            m.ReadinessText = "(unreadable)";
+        }
+    }
+
+    /// <summary>
+    /// Estate workbook: machine inventory with readiness, all machine-to-machine
+    /// dependencies, and the wave rollup with cross-wave counts.
+    /// </summary>
+    [RelayCommand]
+    private async Task ExportFleetWorkbook()
+    {
+        if (SaveService is null) return;
+        if (Machines.Count == 0) { Status = "Import or scan machines first."; return; }
+        if (IsExporting) return;
+
+        var path = await SaveService.SaveAsync(
+            $"fleet-workbook-{DateTime.Now:yyyyMMdd-HHmmss}.xlsx", "xlsx", null);
+        if (path is null) return;
+
+        var machines = Machines.ToList();
+        var query = BuildQuery();
+        IsExporting = true;
+        try
+        {
+            Status = "Building fleet workbook…";
+            await Task.Run(() =>
+            {
+                var summaries = machines.Select(Summarize).ToList();
+                var deps = _multi.DetectCrossDependencies(query);
+                FleetWorkbookWriter.Write(summaries, deps.ToList(), path);
+            });
+            ShellHelper.RevealAfterExport(path);
+            Status = $"Fleet workbook exported: {path}";
+        }
+        catch (Exception ex)
+        {
+            Status = "Fleet workbook export failed: " + ex.Message;
+        }
+        finally
+        {
+            IsExporting = false;
+        }
+    }
+
+    private static FleetMachineSummary Summarize(MachineRef m)
+    {
+        var s = new FleetMachineSummary
+        {
+            Name = m.Name,
+            Wave = m.Wave,
+            Source = m.Source,
+            ReadinessScore = m.ReadinessScore,
+            ReadinessRating = m.ReadinessText.Split(' ')[0],
+            NewDeps7d = m.NewDeps7d
+        };
+        try
+        {
+            var data = new DataAccess(() => m.DatabasePath);
+            var flows = data.QueryUnique(new ConnectionQuery { Limit = 1_000_000 });
+            s.FlowCount = flows.Count;
+            s.InboundCount = flows.Count(f => f.Direction == ConnectionDirection.Inbound);
+            s.OutboundCount = flows.Count(f => f.Direction == ConnectionDirection.Outbound);
+            s.SweepCount = long.TryParse(data.GetMeta("sweep_count"), out var sc) ? sc : 0;
+            s.Addresses = string.Join(", ", data.GetLocalAddresses().Take(4));
+            if (flows.Count > 0)
+            {
+                s.WindowStart = flows.Min(f => f.FirstSeen);
+                s.WindowEnd = flows.Max(f => f.LastSeen);
+            }
+            s.HighRiskFindings = RiskFlags.Analyze(flows).Count(f => f.Severity == "High");
+        }
+        catch { /* leave partial summary */ }
+        return s;
     }
 
     [RelayCommand]

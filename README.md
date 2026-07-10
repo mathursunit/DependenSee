@@ -60,7 +60,18 @@ already structured for it.
   scope and direction, sized by traffic volume.
 - **Fleet view & wave planner** — import databases from multiple machines and plan
   migration waves across them. Databases written by scheduled remote scans are
-  picked up automatically.
+  picked up automatically. Each machine shows a migration-readiness score
+  (observation window, sweep volume, attribution — with the reasons spelled
+  out), new-dependency drift over the last 7 days, and its collection source.
+- **Analysis built in** — deprecated/risky protocol findings (telnet, FTP,
+  r-services, cleartext LDAP, NetBIOS, internet-exposed listeners) and
+  freeze-drift detection land in every dossier; the fleet workbook rolls the
+  estate up (inventory + readiness, full cross-dependency list, wave rollup
+  with cross-wave counts).
+- **Cloud rule generation** — every dossier includes AWS Security Group and
+  Azure NSG starting points (Terraform + neutral JSON) derived from observed
+  flows, plus a machine-readable dossier.json for pipelines. Headless export:
+  `CarrierDependenSee.App.exe export-dossier --all --hours 168 --out D:\dossiers`.
 - **Agentless remote scans that accumulate** — recurring (scheduled) WinRM/SSH
   scans take several snapshots per session (configurable sweeps + delay),
   harvest recently-closed flows from Linux kernel connection tracking

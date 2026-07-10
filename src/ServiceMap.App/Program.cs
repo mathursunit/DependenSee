@@ -14,6 +14,12 @@ internal static class Program
             Environment.Exit(RemoteScanCli.Run(args).GetAwaiter().GetResult());
             return;
         }
+        // Headless dossier export: no GUI.
+        if (args.Length > 0 && args[0].Equals("export-dossier", StringComparison.OrdinalIgnoreCase))
+        {
+            Environment.Exit(DossierCli.Run(args));
+            return;
+        }
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 

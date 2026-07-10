@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using ClosedXML.Excel;
+using ServiceMap.Core.Analysis;
 using ServiceMap.Core.Models;
 
 namespace ServiceMap.Reporting;
@@ -49,6 +50,13 @@ public sealed class DossierData
     public bool PolicyLoaded { get; set; }
     public List<DossierReconRow> Reconciliation { get; } = new();
     public List<DossierReconRow> UnusedRules { get; } = new();
+
+    public int ReadinessScore { get; set; }
+    public string ReadinessRating { get; set; } = string.Empty;
+    public List<string> ReadinessNotes { get; } = new();
+    public List<RiskFinding> RiskFindings { get; } = new();
+    /// <summary>Dependencies first observed in the last 7 days (freeze-drift check).</summary>
+    public List<ConnectionAggregate> RecentDependencies { get; } = new();
 }
 
 /// <summary>
@@ -92,6 +100,13 @@ public static class ServerDossierWriter
                 c.Process, c.Protocol.ToString(), c.RemoteAddress, c.RemotePort.ToString(), c.SampleCount.ToString()
             })));
 
+        files.Add(WriteCsv(dir, "risk-flags.csv",
+            new[] { "severity", "title", "detail" },
+            d.RiskFindings.Select(r => new[] { r.Severity, r.Title, r.Detail })));
+
+        files.Add(WriteCsv(dir, "new-dependencies.csv", FlowHeader,
+            d.RecentDependencies.Select(FlowRow)));
+
         files.Add(WriteCsv(dir, "annotations.csv",
             new[] { "kind", "key", "friendly_name", "owner", "criticality", "notes" },
             d.Annotations.Select(a => new[]
@@ -106,6 +121,24 @@ public static class ServerDossierWriter
                 d.Reconciliation.Select(ReconRow)));
             files.Add(WriteCsv(dir, "unused-allow-rules.csv", ReconHeader,
                 d.UnusedRules.Select(ReconRow)));
+        }
+
+        // Machine-readable twin of the whole dossier, for pipelines/CMDB import.
+        File.WriteAllText(Path.Combine(dir, "dossier.json"),
+            JsonSerializer.Serialize(d, new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            }));
+        files.Add("dossier.json");
+
+        // Target-cloud rule starting points derived from observed flows.
+        var cloudDir = Path.Combine(dir, "cloud-rules");
+        Directory.CreateDirectory(cloudDir);
+        foreach (var (fileName, content) in CloudRuleGenerator.Generate(d))
+        {
+            File.WriteAllText(Path.Combine(cloudDir, fileName), content);
+            files.Add("cloud-rules/" + fileName);
         }
 
         var manifest = new
@@ -183,6 +216,16 @@ public static class ServerDossierWriter
             ("Inbound dependencies", d.Inbound.Count.ToString()),
             ("Outbound dependencies", d.Outbound.Count.ToString()),
             ("Machine-to-machine dependencies", d.CrossDependencies.Count.ToString()),
+            ("Readiness", d.ReadinessRating.Length > 0
+                ? $"{d.ReadinessRating} ({d.ReadinessScore}/100)" +
+                  (d.ReadinessNotes.Count > 0 ? " - " + string.Join(" ", d.ReadinessNotes) : "")
+                : "(not computed)"),
+            ("Risk flags", d.RiskFindings.Count == 0
+                ? "none"
+                : $"{d.RiskFindings.Count(f => f.Severity == "High")} high, " +
+                  $"{d.RiskFindings.Count(f => f.Severity == "Medium")} medium, " +
+                  $"{d.RiskFindings.Count(f => f.Severity == "Low")} low"),
+            ("New dependencies (7d)", d.RecentDependencies.Count.ToString()),
             ("Firewall policy", d.PolicyLoaded
                 ? $"reconciled - {d.Reconciliation.Count} flows, {d.UnusedRules.Count} unused allow rules"
                 : "(no policy folder configured)"),
@@ -228,6 +271,13 @@ public static class ServerDossierWriter
             Sheet(wb, "Unused allow rules", ReconSheetHeader,
                 d.UnusedRules.Select(ReconSheetRow));
         }
+
+        Sheet(wb, "Risk flags",
+            new[] { "Severity", "Finding", "Detail" },
+            d.RiskFindings.Select(r => new object[] { r.Severity, r.Title, r.Detail }));
+
+        Sheet(wb, "New dependencies (7d)", FlowSheetHeader,
+            d.RecentDependencies.Select(FlowSheetRow));
 
         Sheet(wb, "Annotations",
             new[] { "Kind", "Key", "Friendly name", "Owner", "Criticality", "Notes" },

@@ -86,6 +86,10 @@ public sealed class ServerDossierWriterTests : IDisposable
         // Policy-dependent sections present because PolicyLoaded = true.
         Assert.Contains("firewall-reconciliation.csv", files);
         Assert.Contains("unused-allow-rules.csv", files);
+        Assert.Contains("dossier.json", files);
+        Assert.Contains("risk-flags.csv", files);
+        Assert.Contains("cloud-rules/aws-security-group.tf", files);
+        Assert.Contains("cloud-rules/azure-nsg.tf", files);
     }
 
     [Fact]
@@ -103,6 +107,8 @@ public sealed class ServerDossierWriterTests : IDisposable
         Assert.Contains("Cross-dependencies", sheets);
         Assert.Contains("Firewall reconciliation", sheets);
         Assert.Contains("Unused allow rules", sheets);
+        Assert.Contains("Risk flags", sheets);
+        Assert.Contains("New dependencies (7d)", sheets);
         Assert.Contains("Annotations", sheets);
 
         var services = wb.Worksheet("Services");

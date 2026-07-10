@@ -497,6 +497,8 @@
                                 <Button Content="Assign wave" Command="{Binding Fleet.AssignWaveCommand}" />
                                 <Button Content="Export dossier" Command="{Binding Fleet.ExportDossierCommand}"
                                         IsEnabled="{Binding !Fleet.IsExporting}" />
+                                <Button Content="Export fleet workbook" Command="{Binding Fleet.ExportFleetWorkbookCommand}"
+                                        IsEnabled="{Binding !Fleet.IsExporting}" />
                                 <ProgressBar Width="140" Minimum="0" Maximum="100" VerticalAlignment="Center"
                                              IsVisible="{Binding Fleet.IsExporting}"
                                              Value="{Binding Fleet.ExportProgress}" />
@@ -514,6 +516,9 @@
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Machine" Binding="{Binding Name}" Width="*" />
                                 <DataGridTextColumn Header="Wave" Binding="{Binding Wave}" Width="Auto" />
+                                <DataGridTextColumn Header="Readiness" Binding="{Binding ReadinessText}" Width="Auto" />
+                                <DataGridTextColumn Header="New deps (7d)" Binding="{Binding NewDeps7d}" Width="Auto" />
+                                <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="Auto" />
                             </DataGrid.Columns>
                         </DataGrid>
 

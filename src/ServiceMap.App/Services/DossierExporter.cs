@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using ServiceMap.Core.Analysis;
 using ServiceMap.Core.Models;
 using ServiceMap.Core.Storage;
 using ServiceMap.Firewall.Matching;
@@ -64,6 +65,14 @@ public static class DossierExporter
             d.WindowStart = flows.Min(f => f.FirstSeen);
             d.WindowEnd = flows.Max(f => f.LastSeen);
         }
+
+        // Analysis: readiness, protocol risk flags, freeze-drift dependencies.
+        var readiness = Readiness.Compute(Readiness.FromFlows(flows, d.SweepCount, d.CollectionSource));
+        d.ReadinessScore = readiness.Score;
+        d.ReadinessRating = readiness.Rating;
+        d.ReadinessNotes.AddRange(readiness.Notes);
+        d.RiskFindings.AddRange(RiskFlags.Analyze(flows));
+        d.RecentDependencies.AddRange(RiskFlags.RecentlyAppeared(flows));
 
         // Firewall reconciliation, when a policy folder is configured.
         Report(30, "Reconciling against firewall policy…");
