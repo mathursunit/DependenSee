@@ -14,6 +14,9 @@ public sealed class AppSettings
     public string ExportDirectory { get; set; } = new CollectorOptions().ExportDirectory;
     public string FirewallPolicyFolder { get; set; } = string.Empty;
 
+    /// <summary>After a successful export, open an Explorer window with the file selected.</summary>
+    public bool OpenFolderAfterExport { get; set; } = true;
+
     private static string SettingsPath
     {
         get

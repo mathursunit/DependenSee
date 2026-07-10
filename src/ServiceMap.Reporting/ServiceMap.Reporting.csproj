@@ -7,6 +7,8 @@
   <ItemGroup>
     <!-- Cross-platform (no System.Drawing) so the report engine runs anywhere. -->
     <PackageReference Include="PDFsharp-MigraDoc" Version="6.1.1" />
+    <!-- Excel workbook output for the per-server migration dossier. -->
+    <PackageReference Include="ClosedXML" Version="0.104.2" />
   </ItemGroup>
 
   <ItemGroup>

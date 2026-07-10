@@ -64,6 +64,10 @@ public sealed class DataAccess
     public string? GetMachineName() =>
         WithRepo(r => r.MachineName, null);
 
+    /// <summary>Read a meta key (e.g. sweep_count, collection_source) from the database.</summary>
+    public string? GetMeta(string key) =>
+        WithRepo(r => r.GetMeta(key), null);
+
     /// <summary>Build the firewall-rule report from stored data.</summary>
     public FirewallReport BuildFirewallReport(ConnectionQuery q, FirewallReportOptions o) =>
         WithRepo(r => FirewallReportBuilder.Build(r, q, o), new FirewallReport());

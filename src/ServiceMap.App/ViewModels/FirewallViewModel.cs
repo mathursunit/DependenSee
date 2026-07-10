@@ -245,6 +245,7 @@ public sealed partial class FirewallViewModel : ViewModelBase
                 r.Protocol, Q(r.Service), Q(r.Rule), Q(r.Policy), Q(r.Zones), r.Count.ToString()
             }));
         File.WriteAllText(path, sb.ToString());
+        ShellHelper.RevealAfterExport(path);
         ReconStatus = $"Exported {rows.Count} rows to {path}";
     }
 

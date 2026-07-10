@@ -194,6 +194,7 @@
                                 <Button Content="Export JSON" Command="{Binding History.ExportJsonCommand}" Margin="0,0,16,0" />
                                 <Button Content="Export firewall PDF" Command="{Binding History.ExportFirewallPdfCommand}"
                                         Background="#1F2937" Foreground="White" Margin="0,0,10,0" />
+                                <Button Content="Export dossier" Command="{Binding ExportDossierCommand}" />
                                 <CheckBox Content="Resolve names" IsChecked="{Binding History.ResolveHostnames}" Margin="0,0,12,0"
                                           VerticalAlignment="Center" />
                                 <CheckBox Content="Summarize /24" IsChecked="{Binding History.SummarizeSources}"
@@ -486,6 +487,7 @@
                                 <TextBlock Text="Wave" FontSize="11" Foreground="#6B7280" VerticalAlignment="Center" Margin="8,0,0,0" />
                                 <TextBox Width="120" Text="{Binding Fleet.WaveInput}" />
                                 <Button Content="Assign wave" Command="{Binding Fleet.AssignWaveCommand}" />
+                                <Button Content="Export dossier" Command="{Binding Fleet.ExportDossierCommand}" />
                                 <Button Content="Export server PDF" Command="{Binding Fleet.ExportServerPdfCommand}"
                                         Background="#1F2937" Foreground="White" Margin="16,0,0,0" />
                             </StackPanel>
@@ -619,6 +621,8 @@
                             <TextBlock Text="Export directory" FontSize="11" Foreground="#6B7280" />
                             <TextBox Text="{Binding Settings.ExportDirectory}" />
                         </StackPanel>
+                        <CheckBox Content="Open folder after export (reveals the saved file in Explorer)"
+                                  IsChecked="{Binding Settings.OpenFolderAfterExport}" />
                         <StackPanel Spacing="4">
                             <TextBlock Text="Dashboard refresh (seconds)" FontSize="11" Foreground="#6B7280" />
                             <NumericUpDown Width="140" HorizontalAlignment="Left" Minimum="1" Maximum="300"

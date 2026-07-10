@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using ServiceMap.App.Services;
 using ServiceMap.Core.Models;
 using ServiceMap.Core.Storage;
@@ -27,6 +28,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     private readonly WorkspaceStore _workspace;
     private readonly MultiSourceDataAccess _multi;
     private readonly DispatcherTimer _timer;
+    private IDialogService? _dialogs;
 
     // null => the local collector database; otherwise a fleet machine's db.
     private string? _activeDbPath;
@@ -65,7 +67,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         Fleet = new FleetViewModel(_multi)
         {
             AnnotationsProvider = () => _workspace.GetAnnotationLookup(),
-            OnViewServer = ViewServer
+            OnViewServer = ViewServer,
+            PolicyFolderProvider = () => _settings.FirewallPolicyFolder
         };
         Remote = new RemoteViewModel(_multi, () =>
         {
@@ -133,9 +136,50 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         if (option is not null) SelectedMachineOption = option;
     }
 
+    /// <summary>
+    /// Migration dossier for the ACTIVE machine (local or the selected fleet
+    /// snapshot): zip of Excel workbook + CSVs + firewall PDF + manifest.
+    /// </summary>
+    [RelayCommand]
+    private async Task ExportDossier()
+    {
+        if (_dialogs is null) return;
+        var name = SelectedMachineOption is { IsLocal: false } opt
+            ? opt.Name
+            : _data.GetMachineName() ?? Environment.MachineName;
+        var dbPath = _activeDbPath ?? _settings.DatabasePath;
+        var wave = _multi.GetMachines()
+            .FirstOrDefault(m => string.Equals(m.Name, name, StringComparison.OrdinalIgnoreCase))?.Wave ?? string.Empty;
+
+        var suggested = $"{name}-dossier-{DateTime.Now:yyyyMMdd-HHmmss}.zip";
+        var path = await _dialogs.SaveAsync(suggested, "zip", _settings.ExportDirectory);
+        if (path is null) return;
+
+        try
+        {
+            History.ResultSummary = $"Building dossier for {name}…";
+            DossierExporter.Export(
+                path, name, dbPath, wave, Math.Max(1, History.HoursBack), _multi,
+                _workspace.GetAnnotationLookup(), _settings.FirewallPolicyFolder, FindLogo());
+            ShellHelper.RevealAfterExport(path);
+            History.ResultSummary = $"Dossier exported: {path}";
+        }
+        catch (Exception ex)
+        {
+            History.ResultSummary = "Dossier export failed: " + ex.Message;
+        }
+    }
+
+    private static string? FindLogo()
+    {
+        var p = Path.Combine(AppContext.BaseDirectory, "assets", "DependenSee.png");
+        return File.Exists(p) ? p : null;
+    }
+
     /// <summary>Called once the window exists so dialogs (save/open) are available.</summary>
     public void AttachDialogs(IDialogService dialogs)
     {
+        _dialogs = dialogs;
         History.SaveService = dialogs;
         Fleet.OpenService = dialogs;
         Fleet.SaveService = dialogs;

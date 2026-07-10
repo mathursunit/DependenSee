@@ -13,6 +13,7 @@ public sealed partial class SettingsViewModel : ViewModelBase
     [ObservableProperty] private string _databasePath;
     [ObservableProperty] private int _refreshIntervalSeconds;
     [ObservableProperty] private string _exportDirectory;
+    [ObservableProperty] private bool _openFolderAfterExport;
 
     [ObservableProperty] private string _serviceStatus = "—";
     [ObservableProperty] private bool _serviceControlSupported;
@@ -24,6 +25,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _databasePath = settings.DatabasePath;
         _refreshIntervalSeconds = settings.RefreshIntervalSeconds;
         _exportDirectory = settings.ExportDirectory;
+        _openFolderAfterExport = settings.OpenFolderAfterExport;
+        ShellHelper.OpenAfterExport = settings.OpenFolderAfterExport;
         ServiceControlSupported = WindowsServiceControl.IsSupported;
         RefreshServiceStatus();
     }
@@ -48,6 +51,8 @@ public sealed partial class SettingsViewModel : ViewModelBase
         _settings.DatabasePath = DatabasePath;
         _settings.RefreshIntervalSeconds = Math.Max(1, RefreshIntervalSeconds);
         _settings.ExportDirectory = ExportDirectory;
+        _settings.OpenFolderAfterExport = OpenFolderAfterExport;
+        ShellHelper.OpenAfterExport = OpenFolderAfterExport;
         _settings.Save();
         _onSettingsChanged();
     }

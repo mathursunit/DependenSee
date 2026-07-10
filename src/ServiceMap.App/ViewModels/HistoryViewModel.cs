@@ -213,12 +213,14 @@ public sealed partial class HistoryViewModel : ViewModelBase
         {
             var flows = _data.QueryUnique(query);
             if (isCsv) SampleExporter.WriteCsv(path, flows); else SampleExporter.WriteJson(path, flows);
+            ShellHelper.RevealAfterExport(path);
             ResultSummary = $"Exported {flows.Count} flows to {path}";
         }
         else
         {
             var rows = _data.Query(query);
             if (isCsv) SampleExporter.WriteCsv(path, rows); else SampleExporter.WriteJson(path, rows);
+            ShellHelper.RevealAfterExport(path);
             ResultSummary = $"Exported {rows.Count} rows to {path}";
         }
     }
@@ -241,6 +243,7 @@ public sealed partial class HistoryViewModel : ViewModelBase
         };
         var report = _data.BuildFirewallReport(query, options);
         FirewallReportPdf.Save(report, path);
+        ShellHelper.RevealAfterExport(path);
         ResultSummary =
             $"Firewall PDF: {report.Inbound.Count} inbound, {report.Outbound.Count} outbound rules → {path}";
     }

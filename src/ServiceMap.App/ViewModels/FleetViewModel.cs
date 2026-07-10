@@ -36,6 +36,9 @@ public sealed partial class FleetViewModel : ViewModelBase
     /// <summary>Callback to open the selected server in the main tabs (set by the root VM).</summary>
     public Action<MachineRef>? OnViewServer { get; set; }
 
+    /// <summary>Where firewall CSV exports live (from Settings); used by the dossier export.</summary>
+    public Func<string>? PolicyFolderProvider { get; set; }
+
     public ObservableCollection<MachineRef> Machines { get; } = new();
     public ObservableCollection<ConnectionAggregate> Flows { get; } = new();
     public ObservableCollection<CrossDependency> CrossDependencies { get; } = new();
@@ -200,7 +203,41 @@ public sealed partial class FleetViewModel : ViewModelBase
         };
         var report = data.BuildFirewallReport(BuildQuery(), options);
         FirewallReportPdf.Save(report, path);
+        ShellHelper.RevealAfterExport(path);
         Status = $"Exported {machine.Name}: {report.Inbound.Count} inbound, {report.Outbound.Count} outbound rules → {path}";
+    }
+
+    /// <summary>
+    /// One-click migration dossier for the selected server: zip containing the
+    /// Excel workbook, per-section CSVs, the firewall PDF, and a manifest.
+    /// </summary>
+    [RelayCommand]
+    private async Task ExportDossier()
+    {
+        if (SelectedMachine is null) { Status = "Select a machine to export."; return; }
+        if (SaveService is null) return;
+
+        var machine = SelectedMachine;
+        var suggested = $"{machine.Name}-dossier-{DateTime.Now:yyyyMMdd-HHmmss}.zip";
+        var path = await SaveService.SaveAsync(suggested, "zip", Path.GetDirectoryName(machine.DatabasePath));
+        if (path is null) return;
+
+        try
+        {
+            Status = $"Building dossier for {machine.Name}…";
+            DossierExporter.Export(
+                path, machine.Name, machine.DatabasePath, machine.Wave ?? string.Empty,
+                Math.Max(1, HoursBack), _multi,
+                AnnotationsProvider?.Invoke() ?? new Dictionary<string, Annotation>(),
+                PolicyFolderProvider?.Invoke() ?? string.Empty,
+                FindLogo());
+            ShellHelper.RevealAfterExport(path);
+            Status = $"Dossier exported: {path}";
+        }
+        catch (Exception ex)
+        {
+            Status = "Dossier export failed: " + ex.Message;
+        }
     }
 
     [RelayCommand]

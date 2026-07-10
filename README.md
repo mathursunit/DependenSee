@@ -69,6 +69,14 @@ already structured for it.
   state its collection coverage honestly.
 - **CSV / JSON export** — including a `source` (machine) column and resolved service
   name, so data from several machines can be combined and traced.
+- **Server migration dossier** — one click exports everything known about a
+  server as a single zip: an Excel workbook (Overview, Services, Listening
+  ports, Inbound/Outbound flows, Cross-dependencies, Firewall reconciliation,
+  Unused allow rules, Annotations), one CSV per section for pipelines, the
+  firewall PDF, and a manifest with provenance (window, sweep count, tool
+  version). Available for the active machine (History tab) and any fleet
+  machine. Every export ends by revealing the saved file in Explorer
+  (toggle in Settings).
 
 Everything runs locally; the only optional network activity is reverse-DNS lookups
 when generating a firewall PDF.
